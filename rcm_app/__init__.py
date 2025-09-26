@@ -36,10 +36,25 @@ def create_app(config: AppConfig | None = None) -> Flask:
                 dir_path = os.path.dirname(db_path)
                 if dir_path and not os.path.exists(dir_path):
                     os.makedirs(dir_path, exist_ok=True)
+            
+            # Force create all tables
             db.create_all()
+            app.logger.info("Database tables created successfully")
+            
+            # Verify tables exist
+            inspector = db.inspect(db.engine)
+            tables = inspector.get_table_names()
+            app.logger.info(f"Created tables: {tables}")
+            
+            if not tables:
+                app.logger.error("No tables were created! Database initialization failed.")
+            else:
+                app.logger.info(f"Successfully created {len(tables)} tables")
+            
             _ensure_sqlite_pk_compat()
-        except Exception:  # noqa: BLE001
-            app.logger.exception("failed to auto-create tables")
+        except Exception as e:  # noqa: BLE001
+            app.logger.exception(f"failed to auto-create tables: {e}")
+            # Don't fail startup, but log the error
 
     # Log available routes for debugging
     with app.app_context():

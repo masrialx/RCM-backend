@@ -20,7 +20,7 @@ class AppConfig:
     def from_env() -> "AppConfig":
         # Build an absolute default path to instance/rcm.db next to this package
         pkg_root = Path(__file__).resolve().parent.parent
-        default_sqlite_path = pkg_root.parent / "instance" / "rcm.db"
+        default_sqlite_path = pkg_root / "instance" / "rcm.db"
         default_sqlite_url = f"sqlite:///{default_sqlite_path}"
         return AppConfig(
             database_url=os.getenv("DATABASE_URL", default_sqlite_url),

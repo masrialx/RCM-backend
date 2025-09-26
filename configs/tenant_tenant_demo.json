@@ -3,8 +3,8 @@
   "id_rules": {
     "uppercase_required": true,
     "patterns": {
-      "national_id": "^[A-Z0-9]{6,}$",
-      "member_id": "^[A-Z0-9]{6,}$",
+      "national_id": "^[A-Z0-9]{5,}$",
+      "member_id": "^[A-Z0-9]{5,}$",
       "facility_id": "^[A-Z0-9]{3,}$"
     }
   },
