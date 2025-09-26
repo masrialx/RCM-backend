@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Installer logs
+pip-log.txt
+
+# Environment variables / secrets
+.env
+*.env
+
+# VSCode settings
+.vscode/
+
+# MacOS system files
+.DS_Store
+
+# Pytest cache
+.pytest_cache/
+
+# mypy, coverage, and test results
+.mypy_cache/
+.coverage
+htmlcov/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# requirements lock (optional)
+poetry.lock
+Pipfile.lock

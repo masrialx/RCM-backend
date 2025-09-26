@@ -1,0 +1,4 @@
+# allowed ICD codes
+E11.9
+I10
+J45.909

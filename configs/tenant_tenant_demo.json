@@ -1,0 +1,14 @@
+{
+  "paid_threshold_aed": 250,
+  "id_rules": {
+    "uppercase_required": true,
+    "patterns": {
+      "national_id": "^[A-Z0-9]{6,}$",
+      "member_id": "^[A-Z0-9]{6,}$",
+      "facility_id": "^[A-Z0-9]{3,}$"
+    }
+  },
+  "services_requiring_approval_file": "services.txt",
+  "diagnoses_file": "diagnoses.txt"
+}
+
