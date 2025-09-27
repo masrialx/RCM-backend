@@ -76,7 +76,7 @@ class ValidationEngine:
             errors = self.validator.run_all(claim)
             current_app.logger.debug(f"Validator result for {claim.claim_id}: {errors}")
             if errors and errors.get("error_type") != "No error":
-                claim.status = "failed"
+                claim.status = "Not Validated"
                 claim.error_type = errors["error_type"]
                 claim.error_explanation = errors.get("explanations", [])
                 claim.recommended_action = errors.get("recommended_actions", [])
@@ -101,7 +101,7 @@ class ValidationEngine:
             self.session.add(refined)
 
             # LLM augmentation when failed or as configured
-            if claim.status == "failed":
+            if claim.status == "Not Validated":
                 try:
                     llm_payload = {
                         "claim": model_to_dict(claim),

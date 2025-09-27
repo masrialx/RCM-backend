@@ -7,6 +7,7 @@ from dataclasses import dataclass
 class RulesBundle:
     services_requiring_approval: set[str]
     diagnoses: set[str]
+    diagnoses_requiring_approval: set[str]
     paid_threshold_aed: float
     id_rules: dict
     raw_rules_text: str
@@ -46,9 +47,14 @@ class TenantConfigLoader:
                 raw_text_parts.append(f"FILE {os.path.basename(p)}\n" + fh.read())
         raw_rules_text = "\n\n".join(raw_text_parts) + f"\npaid_threshold_aed={threshold}\n" + json.dumps({"id_rules": id_rules})
 
+        # For now, assume all diagnoses require approval for threshold violations
+        # In a real system, this would be configurable
+        diagnoses_requiring_approval = diagnoses.copy()
+        
         return RulesBundle(
             services_requiring_approval=services,
             diagnoses=diagnoses,
+            diagnoses_requiring_approval=diagnoses_requiring_approval,
             paid_threshold_aed=threshold,
             id_rules=id_rules,
             raw_rules_text=raw_rules_text,

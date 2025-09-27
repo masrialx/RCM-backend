@@ -29,6 +29,21 @@ class Validator:
                     errors.append(f"{fld} must be uppercase")
                     types.add("Technical")
                     current_app.logger.debug(f"  Uppercase error: {fld}={val}")
+        
+        # Unique ID validation
+        if claim.unique_id:
+            if claim.unique_id != claim.unique_id.upper():
+                errors.append(f"unique_id '{claim.unique_id}' must be uppercase alphanumeric with hyphens.")
+                types.add("Technical")
+                current_app.logger.debug(f"  Unique ID case error: {claim.unique_id}")
+            
+            # Check unique_id format: first4(national)-middle4(member[2:6])-last4(facility)
+            if claim.national_id and claim.member_id and claim.facility_id:
+                expected_unique = f"{claim.national_id[:4]}-{claim.member_id[2:6]}-{claim.facility_id[:4]}"
+                if claim.unique_id.upper() != expected_unique.upper():
+                    errors.append(f"unique_id format incorrect. Expected: {expected_unique}")
+                    types.add("Technical")
+                    current_app.logger.debug(f"  Unique ID format error: got={claim.unique_id}, expected={expected_unique}")
 
         for fld, pat in self.id_patterns.items():
             val = getattr(claim, fld, None)
@@ -50,23 +65,41 @@ class Validator:
         else:
             current_app.logger.debug(f"  Service {claim.service_code} does not require approval")
 
+        try:
+            paid = float(claim.paid_amount_aed) if claim.paid_amount_aed is not None else 0.0
+        except Exception:
+            paid = 0.0
+
+        # Get threshold early
+        threshold = float(self.rules.paid_threshold_aed)
+
         if claim.diagnosis_codes:
             invalid = [d for d in claim.diagnosis_codes if d not in self.rules.diagnoses]
             if invalid:
                 errors.append(f"invalid diagnosis codes: {', '.join(invalid)}")
                 types.add("Medical")
                 current_app.logger.debug(f"  Diagnosis error: {invalid}")
-
-        try:
-            paid = float(claim.paid_amount_aed) if claim.paid_amount_aed is not None else 0.0
-        except Exception:
-            paid = 0.0
+            
+            # Check if diagnosis requires approval for threshold violations
+            if paid > threshold:
+                approval = claim.approval_number
+                if not approval or approval in ["NA", "Obtain approval", "NAN"]:
+                    for diagnosis in claim.diagnosis_codes:
+                        if diagnosis in self.rules.diagnoses_requiring_approval:
+                            errors.append(f"Diagnosis {diagnosis} requires prior approval, but '{approval}' is invalid.")
+                            types.add("Medical")
+                            current_app.logger.debug(f"  Diagnosis approval error: {diagnosis} requires approval, got={approval}")
         
-        threshold = float(self.rules.paid_threshold_aed)
+        # Check paid amount threshold
         if paid > threshold:
-            errors.append("paid_amount_aed exceeds threshold")
-            types.add("Technical")
-            current_app.logger.debug(f"  Threshold error: paid={paid} > threshold={threshold}")
+            # Check if approval is valid for threshold violations
+            approval = claim.approval_number
+            if not approval or approval in ["NA", "Obtain approval", "NAN"]:
+                errors.append(f"Paid amount {paid} > AED {threshold} requires approval, but '{approval}' is invalid.")
+                types.add("Technical")
+                current_app.logger.debug(f"  Threshold error: paid={paid} > threshold={threshold}, approval={approval}")
+            else:
+                current_app.logger.debug(f"  Threshold OK: paid={paid} > threshold={threshold}, but has valid approval={approval}")
         else:
             current_app.logger.debug(f"  Threshold OK: paid={paid} <= threshold={threshold}")
 
