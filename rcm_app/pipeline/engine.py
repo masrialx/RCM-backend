@@ -6,7 +6,7 @@ from uuid import uuid4
 from typing import Any
 from flask import current_app
 from ..extensions import db
-from ..models.models import Master, Refined, Metrics
+from ..models.models import Master, Refined, Metrics, Audit
 from ..rules.loader import RulesBundle
 from ..utils.llm import GeminiClient
 from ..utils.validators import Validator
@@ -73,6 +73,16 @@ class ValidationEngine:
         validated = 0
         failed = 0
         for claim in claims:
+            # Create audit record for validation start
+            audit_start = Audit(
+                claim_id=claim.claim_id,
+                action="validation_started",
+                outcome="in_progress",
+                details={"previous_status": claim.status, "previous_error_type": claim.error_type},
+                tenant_id=self.tenant_id,
+            )
+            self.session.add(audit_start)
+            
             errors = self.validator.run_all(claim)
             current_app.logger.debug(f"Validator result for {claim.claim_id}: {errors}")
             if errors and errors.get("error_type") != "No error":
@@ -86,6 +96,21 @@ class ValidationEngine:
                 claim.error_type = "No error"
                 validated += 1
             self.session.add(claim)
+            
+            # Create audit record for validation completion
+            audit_complete = Audit(
+                claim_id=claim.claim_id,
+                action="validation_completed",
+                outcome="success" if claim.status == "Validated" else "failed",
+                details={
+                    "final_status": claim.status,
+                    "final_error_type": claim.error_type,
+                    "error_count": len(errors.get("explanations", [])) if errors else 0,
+                    "validation_method": "static_rules"
+                },
+                tenant_id=self.tenant_id,
+            )
+            self.session.add(audit_complete)
 
             # generate refined
             refined = Refined(
@@ -103,6 +128,16 @@ class ValidationEngine:
             # LLM augmentation when failed or as configured
             if claim.status == "Not Validated":
                 try:
+                    # Create audit record for LLM usage
+                    audit_llm_start = Audit(
+                        claim_id=claim.claim_id,
+                        action="llm_evaluation_started",
+                        outcome="in_progress",
+                        details={"llm_model": "gemini-2.0-flash", "reason": "claim_validation_failed"},
+                        tenant_id=self.tenant_id,
+                    )
+                    self.session.add(audit_llm_start)
+                    
                     llm_payload = {
                         "claim": model_to_dict(claim),
                         "rules_text": self.rules.raw_rules_text,
@@ -119,8 +154,42 @@ class ValidationEngine:
                         # reconcile type: prefer more severe
                         claim.error_type = reconcile_error_type(claim.error_type, llm_resp.get("error_type"))
                         self.session.add(claim)
-                except Exception:  # noqa: BLE001
+                        
+                        # Create audit record for LLM completion
+                        audit_llm_complete = Audit(
+                            claim_id=claim.claim_id,
+                            action="llm_evaluation_completed",
+                            outcome="success",
+                            details={
+                                "llm_model": "gemini-2.0-flash",
+                                "additional_explanations": len(llm_resp.get("explanations", [])),
+                                "additional_actions": len(llm_resp.get("recommended_actions", [])),
+                                "final_error_type": claim.error_type
+                            },
+                            tenant_id=self.tenant_id,
+                        )
+                        self.session.add(audit_llm_complete)
+                    else:
+                        # Create audit record for LLM failure
+                        audit_llm_fail = Audit(
+                            claim_id=claim.claim_id,
+                            action="llm_evaluation_failed",
+                            outcome="error",
+                            details={"llm_model": "gemini-2.0-flash", "error": "no_response"},
+                            tenant_id=self.tenant_id,
+                        )
+                        self.session.add(audit_llm_fail)
+                except Exception as e:  # noqa: BLE001
                     current_app.logger.exception("LLM evaluation failed; continuing with static results")
+                    # Create audit record for LLM exception
+                    audit_llm_exception = Audit(
+                        claim_id=claim.claim_id,
+                        action="llm_evaluation_exception",
+                        outcome="error",
+                        details={"llm_model": "gemini-2.0-flash", "error": str(e)},
+                        tenant_id=self.tenant_id,
+                    )
+                    self.session.add(audit_llm_exception)
 
         self.session.commit()
         self._update_metrics()

@@ -2,14 +2,14 @@
 
 ## 🎯 Project Overview
 
-Successfully updated the Flask backend to incorporate an AI agent framework, replacing the linear validation pipeline with an autonomous, intelligent agent using ReAct (Reasoning + Acting) approach with Gemini 1.5 Flash.
+Successfully updated the Flask backend to incorporate an AI agent framework, replacing the linear validation pipeline with an autonomous, intelligent agent using ReAct (Reasoning + Acting) approach with Gemini 2.0 Flash.
 
 ## ✅ Completed Implementation
 
 ### 1. **AI Agent Framework** 🤖
 - **ReAct Agent**: Implemented step-by-step reasoning and action execution
 - **LangChain Integration**: Robust agent orchestration with tool binding
-- **Gemini 1.5 Flash**: Advanced reasoning capabilities with retry logic
+- **Gemini 2.0 Flash**: Advanced reasoning capabilities with retry logic
 - **Tool-based Architecture**: Modular validation tools for different tasks
 
 ### 2. **Enhanced Validation System** 🔧
@@ -138,7 +138,7 @@ curl -X POST http://localhost:5000/agent \
 ### Environment Variables
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.0-flash
 DATABASE_URL=postgresql://user:pass@localhost/rcm_db
 JWT_SECRET_KEY=your_jwt_secret
 FLASK_ENV=production

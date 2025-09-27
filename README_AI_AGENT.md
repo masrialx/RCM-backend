@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is an enhanced Flask backend for the RCM (Revenue Cycle Management) Validation Engine that incorporates an AI agent framework using ReAct (Reasoning + Acting) approach with Gemini 1.5 Flash. The system processes healthcare claims data against technical and medical adjudication rules using intelligent, autonomous agents.
+This is an enhanced Flask backend for the RCM (Revenue Cycle Management) Validation Engine that incorporates an AI agent framework using ReAct (Reasoning + Acting) approach with Gemini 2.0 Flash. The system processes healthcare claims data against technical and medical adjudication rules using intelligent, autonomous agents.
 
 ## Key Features
 
@@ -276,7 +276,7 @@ CMD ["python", "run.py"]
 ### Environment Variables
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.0-flash
 DATABASE_URL=postgresql://user:pass@localhost/rcm_db
 JWT_SECRET_KEY=your_jwt_secret
 FLASK_ENV=production

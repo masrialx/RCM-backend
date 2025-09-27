@@ -7,7 +7,7 @@ services:
       - "5000:5000"
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - GEMINI_MODEL=gemini-1.5-flash
+      - GEMINI_MODEL=gemini-2.0-flash
       - DATABASE_URL=postgresql://rcm_user:rcm_password@postgres:5432/rcm_db
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - FLASK_ENV=production
