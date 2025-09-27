@@ -72,7 +72,11 @@ class Validator:
 
         if not errors:
             current_app.logger.debug(f"  Claim {claim.claim_id} is VALID")
-            return None
+            return {
+                "error_type": "No error",
+                "explanations": [],
+                "recommended_actions": []
+            }
 
         etype = self._classify(types)
         actions.extend(self._default_actions(etype))
@@ -83,19 +87,17 @@ class Validator:
             "recommended_actions": actions,
         }
 
-    @staticmethod
-    def _classify(types: set[str]) -> str:
+    def _classify(self, types: set[str]) -> str:
         if not types:
-            return "None"
+            return "No error"
         if types == {"Technical"}:
             return "Technical"
         if types == {"Medical"}:
             return "Medical"
         return "Both"
 
-    @staticmethod
-    def _default_actions(etype: str) -> list[str]:
-        if etype == "None":
+    def _default_actions(self, etype: str) -> list[str]:
+        if etype == "No error":
             return ["accept claim"]
         if etype == "Technical":
             return ["request missing approvals", "correct identifiers", "recalculate payment"]

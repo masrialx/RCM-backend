@@ -2,9 +2,11 @@ from io import BytesIO
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt
 import pandas as pd
-from ..pipeline.engine import ValidationEngine
-from ..rules.loader import TenantConfigLoader
-from ..extensions import db
+from rcm_app.pipeline.engine import ValidationEngine
+from rcm_app.rules.loader import TenantConfigLoader
+from rcm_app.extensions import db
+from rcm_app.models.models import Master, Metrics, Audit
+from sqlalchemy import func, desc
 
 
 claims_bp = Blueprint("claims", __name__)
@@ -65,38 +67,215 @@ def validate_claims():
 @claims_bp.get("/results")
 @jwt_required()
 def get_results():
-    from ..models.models import Master
     jwt_claims = get_jwt()
     tenant_id = request.args.get("tenant_id") or jwt_claims.get("tenant_id")
     if not tenant_id:
         return jsonify({"message": "tenant_id required"}), 400
-    q = Master.query.filter_by(tenant_id=tenant_id)
+    
+    # Pagination parameters
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 10))
+    
+    # Filter parameters
     status = request.args.get("status")
     error_type = request.args.get("error_type")
     service_code = request.args.get("service_code")
+    
+    # Build query
+    q = Master.query.filter_by(tenant_id=tenant_id)
+    
     if status:
         q = q.filter(Master.status == status)
     if error_type:
         q = q.filter(Master.error_type == error_type)
     if service_code:
         q = q.filter(Master.service_code == service_code)
-    rows = q.order_by(Master.created_at.desc()).limit(500).all()
-    def row_to_dict(r):
-        return {
-            "claim_id": r.claim_id,
-            "service_date": r.service_date.isoformat() if r.service_date else None,
-            "status": r.status,
-            "error_type": r.error_type,
-            "service_code": r.service_code,
-            "paid_amount_aed": float(r.paid_amount_aed) if r.paid_amount_aed is not None else None,
-            "tenant_id": r.tenant_id,
+    
+    # Get total count for pagination
+    total_claims = q.count()
+    total_pages = (total_claims + page_size - 1) // page_size
+    
+    # Apply pagination
+    offset = (page - 1) * page_size
+    claims = q.order_by(desc(Master.created_at)).offset(offset).limit(page_size).all()
+    
+    # Convert claims to dict with all Master Table fields
+    claims_data = []
+    for claim in claims:
+        claim_dict = {
+            "claim_id": claim.claim_id,
+            "encounter_type": claim.encounter_type,
+            "service_date": claim.service_date.isoformat() if claim.service_date else None,
+            "national_id": claim.national_id,
+            "member_id": claim.member_id,
+            "facility_id": claim.facility_id,
+            "unique_id": claim.unique_id,
+            "diagnosis_codes": claim.diagnosis_codes,
+            "service_code": claim.service_code,
+            "paid_amount_aed": float(claim.paid_amount_aed) if claim.paid_amount_aed is not None else None,
+            "approval_number": claim.approval_number,
+            "status": claim.status,
+            "error_type": claim.error_type,
+            "error_explanation": claim.error_explanation or [],
+            "recommended_action": claim.recommended_action or [],
+            "tenant_id": claim.tenant_id,
+            "created_at": claim.created_at.isoformat() if claim.created_at else None,
+            "updated_at": claim.updated_at.isoformat() if claim.updated_at else None
         }
-    return jsonify([row_to_dict(r) for r in rows]), 200
+        claims_data.append(claim_dict)
+    
+    # Get chart data from Metrics table
+    chart_data = _get_chart_data(tenant_id)
+    
+    # Pagination metadata
+    pagination = {
+        "page": page,
+        "total_pages": total_pages,
+        "total_claims": total_claims,
+        "page_size": page_size
+    }
+    
+    return jsonify({
+        "claims": claims_data,
+        "chart_data": chart_data,
+        "pagination": pagination
+    }), 200
 
 
 @claims_bp.get("/audit")
 @jwt_required()
 def audit_log():
-    # Placeholder simple audit response; extend with real audit storage later
-    return jsonify({"message": "audit log not implemented in prototype", "status": "ok"}), 200
+    jwt_claims = get_jwt()
+    tenant_id = request.args.get("tenant_id") or jwt_claims.get("tenant_id")
+    if not tenant_id:
+        return jsonify({"message": "tenant_id required"}), 400
+    
+    # Pagination parameters
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 20))
+    
+    # Filter parameters
+    claim_id = request.args.get("claim_id")
+    action = request.args.get("action")
+    
+    # Build query
+    q = Audit.query.filter_by(tenant_id=tenant_id)
+    
+    if claim_id:
+        q = q.filter(Audit.claim_id == claim_id)
+    if action:
+        q = q.filter(Audit.action == action)
+    
+    # Get total count for pagination
+    total_audits = q.count()
+    total_pages = (total_audits + page_size - 1) // page_size
+    
+    # Apply pagination
+    offset = (page - 1) * page_size
+    audits = q.order_by(desc(Audit.timestamp)).offset(offset).limit(page_size).all()
+    
+    # Convert audits to dict
+    audit_data = []
+    for audit in audits:
+        audit_dict = {
+            "id": audit.id,
+            "claim_id": audit.claim_id,
+            "action": audit.action,
+            "timestamp": audit.timestamp.isoformat() if audit.timestamp else None,
+            "outcome": audit.outcome,
+            "details": audit.details or {},
+            "tenant_id": audit.tenant_id,
+            "created_at": audit.created_at.isoformat() if audit.created_at else None
+        }
+        audit_data.append(audit_dict)
+    
+    # Pagination metadata
+    pagination = {
+        "page": page,
+        "total_pages": total_pages,
+        "total_audits": total_audits,
+        "page_size": page_size
+    }
+    
+    return jsonify({
+        "audits": audit_data,
+        "pagination": pagination
+    }), 200
+
+
+@claims_bp.post("/agent")
+@jwt_required()
+def query_agent():
+    """Query the AI agent for specific analysis"""
+    jwt_claims = get_jwt()
+    tenant_id = (request.json or {}).get("tenant_id") or jwt_claims.get("tenant_id")
+    claim_id = (request.json or {}).get("claim_id")
+    query = (request.json or {}).get("query", "")
+    
+    if not tenant_id or not claim_id:
+        return jsonify({"message": "tenant_id and claim_id required"}), 400
+    
+    try:
+        # Get the claim
+        claim = Master.query.filter_by(tenant_id=tenant_id, claim_id=claim_id).first()
+        if not claim:
+            return jsonify({"message": "Claim not found"}), 404
+        
+        # Initialize agent
+        tenant_loader = TenantConfigLoader()
+        rules_bundle = tenant_loader.load_rules_for_tenant(tenant_id)
+        agent = RCMValidationAgent(db.session, tenant_id, rules_bundle)
+        
+        # Query agent
+        agent_result = agent.validate_claim(claim)
+        
+        return jsonify({
+            "claim_id": claim_id,
+            "agent_response": {
+                "status": agent_result.status,
+                "error_type": agent_result.error_type,
+                "explanations": agent_result.error_explanation,
+                "recommended_actions": agent_result.recommended_action,
+                "confidence": agent_result.confidence,
+                "reasoning": agent_result.agent_reasoning
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"message": f"Agent query failed: {str(e)}"}), 500
+
+
+def _get_chart_data(tenant_id: str) -> dict:
+    """Get chart data from Metrics table"""
+    try:
+        # Get claim counts by error type
+        claim_counts = db.session.query(
+            Metrics.error_category,
+            func.sum(Metrics.claim_count)
+        ).filter(
+            Metrics.tenant_id == tenant_id
+        ).group_by(Metrics.error_category).all()
+        
+        # Get paid amounts by error type
+        paid_amounts = db.session.query(
+            Metrics.error_category,
+            func.sum(Metrics.paid_sum)
+        ).filter(
+            Metrics.tenant_id == tenant_id
+        ).group_by(Metrics.error_category).all()
+        
+        # Convert to dictionaries
+        claim_counts_by_error = {error_type: int(count) for error_type, count in claim_counts}
+        paid_amount_by_error = {error_type: float(amount) for error_type, amount in paid_amounts}
+        
+        return {
+            "claim_counts_by_error": claim_counts_by_error,
+            "paid_amount_by_error": paid_amount_by_error
+        }
+        
+    except Exception as e:
+        return {
+            "claim_counts_by_error": {},
+            "paid_amount_by_error": {}
+        }
 

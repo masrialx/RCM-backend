@@ -74,15 +74,16 @@ class ValidationEngine:
         failed = 0
         for claim in claims:
             errors = self.validator.run_all(claim)
-            if errors:
+            current_app.logger.debug(f"Validator result for {claim.claim_id}: {errors}")
+            if errors and errors.get("error_type") != "No error":
                 claim.status = "failed"
                 claim.error_type = errors["error_type"]
                 claim.error_explanation = errors.get("explanations", [])
                 claim.recommended_action = errors.get("recommended_actions", [])
                 failed += 1
             else:
-                claim.status = "validated"
-                claim.error_type = "None"
+                claim.status = "Validated"
+                claim.error_type = "No error"
                 validated += 1
             self.session.add(claim)
 
@@ -126,7 +127,7 @@ class ValidationEngine:
         return {"validated": validated, "failed": failed}
 
     def _derive_final_action(self, claim: Master) -> str:
-        if claim.error_type == "None":
+        if claim.error_type == "No error":
             return "accept"
         if claim.error_type == "Both":
             return "reject"
@@ -207,7 +208,7 @@ def model_to_dict(claim: Master) -> dict[str, Any]:
 
 
 def reconcile_error_type(static_type: str, llm_type: str | None) -> str:
-    order = {"None": 0, "Technical": 1, "Medical": 2, "Both": 3}
+    order = {"No error": 0, "Technical": 1, "Medical": 2, "Both": 3}
     candidate = llm_type or static_type
     if order.get(candidate, 0) >= order.get(static_type, 0):
         return candidate

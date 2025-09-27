@@ -1,0 +1,4 @@
+claim_id,encounter_type,service_date,national_id,member_id,facility_id,unique_id,diagnosis_codes,service_code,paid_amount_aed,approval_number
+SUCCESS-001,OP,2024-01-15,ABC123,MB001,FC001,ABC1-MB00-FC00,"E11.9",SRV1001,200,APP001
+SUCCESS-002,IP,2024-01-16,DEF456,MB002,FC002,DEF4-MB00-FC00,"I10",SRV2002,150,
+SUCCESS-003,OP,2024-01-17,GHI789,MB003,FC003,GHI7-MB00-FC00,"J45.909",SRV3003,300,APP003
