@@ -100,10 +100,12 @@ class ValidationEngine:
             # Map error types to requested categories
             def _map_error_type(val: str | None) -> str:
                 v = (val or "No error").strip()
-                if v == "Technical":
-                    return "Administrative"
+                if v == "Technical error":
+                    return "Technical error"
+                if v == "Medical error":
+                    return "Medical error"
                 if v == "Both":
-                    return "Medical"
+                    return "Both"
                 return v
 
             if result and result.get("error_type") != "No error":
@@ -228,6 +230,165 @@ class ValidationEngine:
         if claim.error_type == "Medical":
             return "escalate"
         return "reject"
+
+    def comprehensive_adjudication(self, df) -> dict[str, Any]:
+        """Comprehensive medical claims adjudication with detailed validation and corrections"""
+        required_cols = [
+            "encounter_type","service_date","national_id","member_id","facility_id",
+            "unique_id","diagnosis_codes","service_code","paid_amount_aed","approval_number",
+        ]
+        for col in required_cols:
+            if col not in df.columns:
+                raise ValueError(f"missing required column: {col}")
+
+        processed_claims = []
+        inserted = 0
+        
+        # Process each claim with comprehensive validation
+        for _, row in df.iterrows():
+            auto_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
+            claim = Master(
+                claim_id=auto_claim_id or str(uuid4()),
+                encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
+                service_date=pd_to_date(row.get("service_date")),
+                national_id=upper_or_none(row.get("national_id")),
+                member_id=upper_or_none(row.get("member_id")),
+                facility_id=upper_or_none(row.get("facility_id")),
+                unique_id=str(row.get("unique_id")) if row.get("unique_id") is not None else None,
+                diagnosis_codes=split_codes(row.get("diagnosis_codes")),
+                service_code=upper_or_none(row.get("service_code")),
+                paid_amount_aed=to_decimal(row.get("paid_amount_aed")),
+                approval_number=upper_or_none(row.get("approval_number")),
+                tenant_id=self.tenant_id,
+            )
+            self.session.add(claim)
+            inserted += 1
+            
+            # Comprehensive validation with detailed output
+            result = self.validator.run_all(claim)
+            
+            # Apply corrections (only approval_number, not encounter_type or unique_id)
+            corrections = (result or {}).get("corrections", {}) if result else {}
+            if corrections:
+                if "approval_number" in corrections:
+                    claim.approval_number = corrections["approval_number"]
+                # Note: Not auto-correcting unique_id or encounter_type per requirements
+                self.session.add(claim)
+            
+            # Map error types
+            def _map_error_type(val: str | None) -> str:
+                v = (val or "No error").strip()
+                if v == "Technical":
+                    return "Administrative"
+                if v == "Both":
+                    return "Medical"
+                return v
+            
+            # Set claim status and error information
+            if result and result.get("error_type") != "No error":
+                claim.status = "Not Validated"
+                claim.error_type = _map_error_type(result["error_type"])
+                claim.error_explanation = result.get("explanations", [])
+                claim.recommended_action = result.get("recommended_actions", [])
+            else:
+                claim.status = "Validated"
+                claim.error_type = "No error"
+                if result and (result.get("explanations") or result.get("recommended_actions")):
+                    claim.error_explanation = result.get("explanations", [])
+                    claim.recommended_action = result.get("recommended_actions", [])
+            
+            self.session.add(claim)
+            
+            # Create detailed claim output
+            claim_output = {
+                "claim_id": claim.claim_id,
+                "encounter_type": claim.encounter_type,
+                "service_date": claim.service_date.isoformat() if claim.service_date else None,
+                "national_id": claim.national_id,
+                "member_id": claim.member_id,
+                "facility_id": claim.facility_id,
+                "unique_id": claim.unique_id,
+                "diagnosis_codes": claim.diagnosis_codes,
+                "service_code": claim.service_code,
+                "paid_amount_aed": float(claim.paid_amount_aed) if claim.paid_amount_aed is not None else None,
+                "approval_number": claim.approval_number,
+                "status": claim.status,
+                "error_type": claim.error_type,
+                "error_explanation": claim.error_explanation or [],
+                "recommended_action": claim.recommended_action or [],
+                "corrections_applied": corrections,
+                "summary": self._generate_claim_summary(claim, result, corrections),
+                "tenant_id": self.tenant_id,
+                "created_at": claim.created_at.isoformat() if claim.created_at else None,
+                "updated_at": claim.updated_at.isoformat() if claim.updated_at else None
+            }
+            processed_claims.append(claim_output)
+        
+        self.session.commit()
+        
+        # Generate chart data
+        chart_data = self._generate_chart_data(processed_claims)
+        
+        # Generate pagination info
+        total_claims = len(processed_claims)
+        pagination = {
+            "page": 1,
+            "page_size": total_claims,
+            "total_claims": total_claims,
+            "total_pages": 1
+        }
+        
+        return {
+            "claims": processed_claims,
+            "chart_data": chart_data,
+            "pagination": pagination,
+            "summary": {
+                "total_processed": total_claims,
+                "validated": len([c for c in processed_claims if c["status"] == "Validated"]),
+                "not_validated": len([c for c in processed_claims if c["status"] == "Not Validated"]),
+                "corrections_applied": len([c for c in processed_claims if c["corrections_applied"]]),
+                "error_types": {
+                    "No error": len([c for c in processed_claims if c["error_type"] == "No error"]),
+                    "Administrative": len([c for c in processed_claims if c["error_type"] == "Administrative"]),
+                    "Medical": len([c for c in processed_claims if c["error_type"] == "Medical"])
+                }
+            }
+        }
+
+    def _generate_claim_summary(self, claim: Master, result: dict | None, corrections: dict) -> str:
+        """Generate a short explanation per claim summarizing corrections made"""
+        summary_parts = []
+        
+        if corrections:
+            if "approval_number" in corrections:
+                summary_parts.append(f"Generated approval number '{corrections['approval_number']}'")
+        
+        if result and result.get("explanations"):
+            # Filter out correction messages from explanations
+            filtered_explanations = [exp for exp in result["explanations"] if not exp.startswith("Generated approval_number") and not exp.startswith("Normalized unique_id") and not exp.startswith("Corrected encounter_type")]
+            summary_parts.extend([f"Issue: {exp}" for exp in filtered_explanations[:2]])  # Limit to first 2 issues
+        
+        if not summary_parts:
+            summary_parts.append("No issues found - claim validated successfully")
+        
+        return "; ".join(summary_parts)
+
+    def _generate_chart_data(self, claims: list[dict]) -> dict:
+        """Generate chart data with claim counts and paid amounts by error type"""
+        claim_counts_by_error = {}
+        paid_amount_by_error = {}
+        
+        for claim in claims:
+            error_type = claim["error_type"]
+            paid_amount = claim["paid_amount_aed"] or 0
+            
+            claim_counts_by_error[error_type] = claim_counts_by_error.get(error_type, 0) + 1
+            paid_amount_by_error[error_type] = paid_amount_by_error.get(error_type, 0) + paid_amount
+        
+        return {
+            "claim_counts_by_error": claim_counts_by_error,
+            "paid_amount_by_error": paid_amount_by_error
+        }
 
     def _update_metrics(self) -> None:
         # Simple aggregation per tenant

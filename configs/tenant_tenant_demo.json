@@ -5,7 +5,8 @@
     "patterns": {
       "national_id": "^[A-Z0-9]{5,}$",
       "member_id": "^[A-Z0-9]{5,}$",
-      "facility_id": "^[A-Z0-9]{3,}$"
+      "facility_id": "^[A-Z0-9]{3,}$",
+      "unique_id": "^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$"
     },
     "inpatient_only_services": ["SRV1001", "SRV1002", "SRV1003"],
     "outpatient_only_services": ["SRV2001", "SRV2002", "SRV2003", "SRV2004", "SRV2006", "SRV2007", "SRV2008", "SRV2010", "SRV2011"],
@@ -13,7 +14,8 @@
       "SRV2007": ["E11.9"],
       "SRV2006": ["J45.909"],
       "SRV2001": ["R07.9"],
-      "SRV2008": ["Z34.0"]
+      "SRV2008": ["Z34.0"],
+      "SRV2005": ["N39.0"]
     },
     "mutually_exclusive_diagnoses": [
       ["R73.03", "E11.9"],
@@ -21,13 +23,20 @@
       ["R51", "G43.9"]
     ],
     "facility_registry": {
-      "0DBYE6KP": "DIALYSIS_CENTER"
+      "0DBYE6KP": "DIALYSIS_CENTER",
+      "EPRETQTL": "DIALYSIS_CENTER",
+      "OCQUMGDW": "GENERAL_HOSPITAL",
+      "EGVP0QAQ": "GENERAL_HOSPITAL",
+      "96GUDLMT": "GENERAL_HOSPITAL",
+      "Q3G9N34N": "GENERAL_HOSPITAL",
+      "SZC62NTW": "GENERAL_HOSPITAL"
     },
     "service_allowed_facility_types": {
-      "SRV2008": ["OBSTETRICS", "WOMEN_HEALTH"],
-      "SRV2006": ["PULMONOLOGY", "GENERAL_CLINIC"],
-      "SRV2007": ["ENDOCRINOLOGY", "GENERAL_CLINIC"],
-      "SRV2001": ["GENERAL_CLINIC", "EMERGENCY"]
+      "SRV2008": ["MATERNITY_HOSPITAL"],
+      "SRV1003": ["DIALYSIS_CENTER"],
+      "SRV2010": ["DIALYSIS_CENTER"],
+      "SRV2001": ["CARDIOLOGY_CENTER"],
+      "SRV2011": ["CARDIOLOGY_CENTER"]
     }
   },
   "services_requiring_approval_file": "services.txt",

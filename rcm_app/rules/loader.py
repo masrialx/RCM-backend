@@ -51,9 +51,8 @@ class TenantConfigLoader:
                 raw_text_parts.append(f"FILE {os.path.basename(p)}\n" + fh.read())
         raw_rules_text = "\n\n".join(raw_text_parts) + f"\npaid_threshold_aed={threshold}\n" + json.dumps({"id_rules": id_rules})
 
-        # For now, assume all diagnoses require approval for threshold violations
-        # In a real system, this would be configurable
-        diagnoses_requiring_approval = diagnoses.copy()
+        # Only specific diagnoses require approval as per requirements
+        diagnoses_requiring_approval = {"E11.9", "R07.9", "Z34.0"}
         
         return RulesBundle(
             services_requiring_approval=services,

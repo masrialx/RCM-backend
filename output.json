@@ -1,0 +1,244 @@
+{
+  "chart_data": {
+    "claim_counts_by_error": {
+      "Both": 5,
+      "No error": 1,
+      "Technical error": 2
+    },
+    "paid_amount_by_error": {
+      "Both": 2822.25,
+      "No error": 95.5,
+      "Technical error": 1365.6399999999999
+    }
+  },
+  "claims": [
+    {
+      "claim_id": 1,
+      "encounter_type": "INPATIENT",
+      "service_date": "06/13/2023",
+      "national_id": "47VA2V8M",
+      "member_id": "VYMQ84LH",
+      "facility_id": "Q3G9N34N",
+      "unique_id": "47VA-MQ84-N34N",
+      "diagnosis_codes": "R07.9",
+      "service_code": "SRV1002",
+      "paid_amount_aed": 468.88,
+      "approval_number": "APP841",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "Service requires valid approval_number (e.g., APPROVED, APP###)",
+        "Diagnosis R07.9 requires prior approval; invalid approval_number",
+        "Paid amount 468.88 > AED 250.0 requires valid approval_number",
+        "Generated approval_number 'APP841' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for this service code",
+        "Obtain prior approval for diagnosis-driven services",
+        "Obtain approval for paid amount above threshold",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount",
+        "Change encounter type or update service code",
+        "Review diagnosis coding"
+      ]
+    },
+    {
+      "claim_id": 2,
+      "encounter_type": "OUTPATIENT",
+      "service_date": "09/12/2025",
+      "national_id": "A1B2C3D4",
+      "member_id": "EFGH5678",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "A1B2-GH56-MGDW",
+      "diagnosis_codes": "E88.9",
+      "service_code": "SRV2002",
+      "paid_amount_aed": 95.5,
+      "approval_number": "APP001",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    },
+    {
+      "claim_id": 3,
+      "encounter_type": "OUTPATIENT",
+      "service_date": "08/25/2025",
+      "national_id": "ZT9FTNQA",
+      "member_id": "QA2Y8WAW",
+      "facility_id": "SZC62NTW",
+      "unique_id": "ZT9F-2Y8W-2NTW",
+      "diagnosis_codes": "E66.3;E66.9;R07.9",
+      "service_code": "SRV2001",
+      "paid_amount_aed": 357.29,
+      "approval_number": "APP243",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "mutually exclusive diagnoses present together: E66.3, E66.9",
+        "Diagnosis R07.9 requires prior approval; invalid approval_number",
+        "Paid amount 357.29 > AED 250.0 requires valid approval_number",
+        "Generated approval_number 'APP243' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for diagnosis-driven services",
+        "Obtain approval for paid amount above threshold",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount",
+        "Change encounter type or update service code",
+        "Review diagnosis coding"
+      ]
+    },
+    {
+      "claim_id": 4,
+      "encounter_type": "INPATIENT",
+      "service_date": "09/11/2025",
+      "national_id": "SESTN6MJ",
+      "member_id": "SHLO7CHH",
+      "facility_id": "96GUDLMT",
+      "unique_id": "sestlo7cdlmt",
+      "diagnosis_codes": "R73.03;E11.9",
+      "service_code": "SRV1002",
+      "paid_amount_aed": 232.74,
+      "approval_number": "APP741",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)",
+        "unique_id does not match required pattern",
+        "Service requires valid approval_number (e.g., APPROVED, APP###)",
+        "mutually exclusive diagnoses present together: E11.9, R73.03",
+        "Diagnosis E11.9 requires prior approval; invalid approval_number",
+        "Generated approval_number 'APP741' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for this service code",
+        "Obtain prior approval for diagnosis-driven services",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount",
+        "Change encounter type or update service code",
+        "Review diagnosis coding"
+      ]
+    },
+    {
+      "claim_id": 5,
+      "encounter_type": "INPATIENT",
+      "service_date": "07/03/2025",
+      "national_id": "5FY03W1N",
+      "member_id": "L61K4NTM",
+      "facility_id": "EGVP0QAQ",
+      "unique_id": "5FY0-1K4N-0QAQ",
+      "diagnosis_codes": "E66.3",
+      "service_code": "SRV1003",
+      "paid_amount_aed": 805.73,
+      "approval_number": "APP188",
+      "status": "Not Validated",
+      "error_type": "Technical error",
+      "error_explanation": [
+        "Service requires valid approval_number (e.g., APPROVED, APP###)",
+        "Paid amount 805.73 > AED 250.0 requires valid approval_number",
+        "Generated approval_number 'APP188' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for this service code",
+        "Obtain approval for paid amount above threshold",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount"
+      ]
+    },
+    {
+      "claim_id": 6,
+      "encounter_type": "INPATIENT",
+      "service_date": "01/13/2025",
+      "national_id": "SYWX6RYN",
+      "member_id": "B1G36XGM",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "SYWX-G36X-MGDW",
+      "diagnosis_codes": "E66.3;R07.9",
+      "service_code": "SRV2001",
+      "paid_amount_aed": 1077.6,
+      "approval_number": "APP801",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "Diagnosis R07.9 requires prior approval; invalid approval_number",
+        "Paid amount 1077.6 > AED 250.0 requires valid approval_number",
+        "Service SRV2001 is OUTPATIENT-only but claim has INPATIENT",
+        "Generated approval_number 'APP801' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for diagnosis-driven services",
+        "Obtain approval for paid amount above threshold",
+        "Change encounter type to OUTPATIENT or correct service code",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount",
+        "Change encounter type or update service code",
+        "Review diagnosis coding"
+      ]
+    },
+    {
+      "claim_id": 7,
+      "encounter_type": "OUTPATIENT",
+      "service_date": "01/13/2023",
+      "national_id": "VKQ1ZIQ4",
+      "member_id": "UM8QU7MB",
+      "facility_id": "EPRETQTL",
+      "unique_id": "VKQ1-8QU7-TQTL",
+      "diagnosis_codes": "E66.9;J45.909",
+      "service_code": "SRV1002",
+      "paid_amount_aed": 685.74,
+      "approval_number": "APP179",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "Service requires valid approval_number (e.g., APPROVED, APP###)",
+        "Paid amount 685.74 > AED 250.0 requires valid approval_number",
+        "Service SRV1002 is INPATIENT-only but claim has OUTPATIENT",
+        "Generated approval_number 'APP179' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for this service code",
+        "Obtain approval for paid amount above threshold",
+        "Change encounter type to INPATIENT or correct service code",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount",
+        "Change encounter type or update service code",
+        "Review diagnosis coding"
+      ]
+    },
+    {
+      "claim_id": 8,
+      "encounter_type": "INPATIENT",
+      "service_date": "05/03/2024",
+      "national_id": "J45NUMBE",
+      "member_id": "UZF615NA",
+      "facility_id": "0DBYE6KP",
+      "unique_id": "j45nf615e6kp",
+      "diagnosis_codes": "E66.9",
+      "service_code": "SRV1003",
+      "paid_amount_aed": 559.91,
+      "approval_number": "APP510",
+      "status": "Not Validated",
+      "error_type": "Technical error",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)",
+        "unique_id does not match required pattern",
+        "Service requires valid approval_number (e.g., APPROVED, APP###)",
+        "Paid amount 559.91 > AED 250.0 requires valid approval_number",
+        "Generated approval_number 'APP510' due to rule requirements"
+      ],
+      "recommended_action": [
+        "Obtain prior approval for this service code",
+        "Obtain approval for paid amount above threshold",
+        "Obtain prior approval for service",
+        "Correct unique_id format",
+        "Obtain prior approval for paid amount"
+      ]
+    }
+  ]
+}

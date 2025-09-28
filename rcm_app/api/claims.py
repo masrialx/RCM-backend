@@ -204,6 +204,46 @@ def audit_log():
     }), 200
 
 
+@claims_bp.post("/adjudicate")
+@jwt_required()
+def adjudicate_claims():
+    """Comprehensive medical claims adjudication with detailed validation and corrections"""
+    jwt_claims = get_jwt()
+    tenant_id = (request.form.get("tenant_id") or jwt_claims.get("tenant_id") or "").strip()
+    if not tenant_id:
+        return jsonify({"message": "tenant_id required"}), 400
+
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"message": "file is required"}), 400
+
+    filename = (file.filename or "").lower()
+    try:
+        content = file.read()
+        buf = BytesIO(content)
+        if filename.endswith(".csv"):
+            df = pd.read_csv(buf)
+        elif filename.endswith(".xlsx") or filename.endswith(".xls"):
+            df = pd.read_excel(buf)
+        else:
+            return jsonify({"message": "unsupported file type"}), 415
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"message": f"failed to parse file: {exc}"}), 400
+
+    tenant_loader = TenantConfigLoader()
+    rules_bundle = tenant_loader.load_rules_for_tenant(tenant_id)
+    engine = ValidationEngine(db.session, tenant_id, rules_bundle)
+    
+    try:
+        # Process claims with comprehensive validation
+        result = engine.comprehensive_adjudication(df)
+        return jsonify(result), 200
+    except ValueError as ve:
+        return jsonify({"message": str(ve)}), 400
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"message": f"processing error: {exc}"}), 500
+
+
 @claims_bp.post("/agent")
 @jwt_required()
 def query_agent():

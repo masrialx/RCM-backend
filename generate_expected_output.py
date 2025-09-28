@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+"""
+Generate the expected output based on the requirements
+"""
+import json
+
+def main():
+    # Expected output based on the requirements
+    expected_output = {
+        "chart_data": {
+            "claim_counts_by_error": {
+                "No error": 2,
+                "Medical error": 1,
+                "Technical error": 2,
+                "Both": 3
+            },
+            "paid_amount_by_error": {
+                "No error": 564.38,
+                "Medical error": 1077.6,
+                "Technical error": 1274.61,
+                "Both": 1275.77
+            }
+        },
+        "claims": [
+            {
+                "claim_id": 1,
+                "encounter_type": "INPATIENT",
+                "service_date": "5/3/2024",
+                "national_id": "J45NUMBE",
+                "member_id": "UZF615NA",
+                "facility_id": "0DBYE6KP",
+                "unique_id": "j45nf615e6kp",
+                "diagnosis_codes": "E66.9",
+                "service_code": "SRV1003",
+                "paid_amount_aed": 559.91,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Technical error",
+                "error_explanation": [
+                    "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX).",
+                    "SRV1003 (Inpatient Dialysis) requires prior approval.",
+                    "Paid amount 559.91 AED exceeds 250 AED, requires prior approval."
+                ],
+                "recommended_action": [
+                    "Correct unique_id to J45N-UZF6-E6KP",
+                    "Obtain prior approval for SRV1003",
+                    "Obtain prior approval for paid amount"
+                ]
+            },
+            {
+                "claim_id": 2,
+                "encounter_type": "INPATIENT",
+                "service_date": "1/13/2025",
+                "national_id": "SYWX6RYN",
+                "member_id": "B1G36XGM",
+                "facility_id": "OCQUMGDW",
+                "unique_id": "SYWX-G36X-MGDW",
+                "diagnosis_codes": "E66.3;R07.9",
+                "service_code": "SRV2001",
+                "paid_amount_aed": 1077.6,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Medical error",
+                "error_explanation": [
+                    "SRV2001 (ECG) is restricted to outpatient encounters, but claim is inpatient."
+                ],
+                "recommended_action": [
+                    "Change encounter type to OUTPATIENT or update service code"
+                ]
+            },
+            {
+                "claim_id": 3,
+                "encounter_type": "OUTPATIENT",
+                "service_date": "8/25/2025",
+                "national_id": "ZT9FTNQA",
+                "member_id": "QA2Y8WAW",
+                "facility_id": "SZC62NTW",
+                "unique_id": "ZT9F-2Y8W-2NTW",
+                "diagnosis_codes": "E66.3;E66.9;R07.9",
+                "service_code": "SRV2001",
+                "paid_amount_aed": 357.29,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Both",
+                "error_explanation": [
+                    "Paid amount 357.29 AED exceeds 250 AED, requires prior approval.",
+                    "Diagnosis R07.9 requires prior approval.",
+                    "E66.3 (Overweight) and E66.9 (Obesity) are mutually exclusive and cannot coexist."
+                ],
+                "recommended_action": [
+                    "Obtain prior approval for paid amount",
+                    "Obtain prior approval for R07.9",
+                    "Remove either E66.3 or E66.9 from diagnosis codes"
+                ]
+            },
+            {
+                "claim_id": 4,
+                "encounter_type": "INPATIENT",
+                "service_date": "7/3/2025",
+                "national_id": "5FY03W1N",
+                "member_id": "L61K4NTM",
+                "facility_id": "EGVP0QAQ",
+                "unique_id": "5FY0-1K4N-0QAQ",
+                "diagnosis_codes": "E66.3",
+                "service_code": "SRV1003",
+                "paid_amount_aed": 805.73,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Technical error",
+                "error_explanation": [
+                    "SRV1003 (Inpatient Dialysis) requires prior approval.",
+                    "Paid amount 805.73 AED exceeds 250 AED, requires prior approval."
+                ],
+                "recommended_action": [
+                    "Obtain prior approval for SRV1003",
+                    "Obtain prior approval for paid amount"
+                ]
+            },
+            {
+                "claim_id": 5,
+                "encounter_type": "OUTPATIENT",
+                "service_date": "9/12/2025",
+                "national_id": "A1B2C3D4",
+                "member_id": "EFGH5678",
+                "facility_id": "OCQUMGDW",
+                "unique_id": "A1B2-GH56-MGDW",
+                "diagnosis_codes": "E88.9",
+                "service_code": "SRV2002",
+                "paid_amount_aed": 95.5,
+                "approval_number": "APP001",
+                "status": "Validated",
+                "error_type": "No error",
+                "error_explanation": [],
+                "recommended_action": [
+                    "Proceed with claim processing"
+                ]
+            },
+            {
+                "claim_id": 6,
+                "encounter_type": "INPATIENT",
+                "service_date": "9/11/2025",
+                "national_id": "SESTN6MJ",
+                "member_id": "SHLO7CHH",
+                "facility_id": "96GUDLMT",
+                "unique_id": "sestlo7cdlmt",
+                "diagnosis_codes": "R73.03;E11.9",
+                "service_code": "SRV1002",
+                "paid_amount_aed": 232.74,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Both",
+                "error_explanation": [
+                    "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX).",
+                    "R73.03 (Prediabetes) and E11.9 (Diabetes Mellitus) are mutually exclusive and cannot coexist."
+                ],
+                "recommended_action": [
+                    "Correct unique_id to SEST-SHLO-96GU",
+                    "Remove either R73.03 or E11.9 from diagnosis codes"
+                ]
+            },
+            {
+                "claim_id": 7,
+                "encounter_type": "INPATIENT",
+                "service_date": "6/13/2023",
+                "national_id": "47VA2V8M",
+                "member_id": "VYMQ84LH",
+                "facility_id": "Q3G9N34N",
+                "unique_id": "47VA-MQ84-N34N",
+                "diagnosis_codes": "R07.9",
+                "service_code": "SRV1002",
+                "paid_amount_aed": 468.88,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Technical error",
+                "error_explanation": [
+                    "SRV1002 (ICU Stay) requires prior approval.",
+                    "Paid amount 468.88 AED exceeds 250 AED, requires prior approval.",
+                    "Diagnosis R07.9 requires prior approval."
+                ],
+                "recommended_action": [
+                    "Obtain prior approval for SRV1002",
+                    "Obtain prior approval for paid amount",
+                    "Obtain prior approval for R07.9"
+                ]
+            },
+            {
+                "claim_id": 8,
+                "encounter_type": "OUTPATIENT",
+                "service_date": "1/13/2023",
+                "national_id": "VKQ1ZIQ4",
+                "member_id": "UM8QU7MB",
+                "facility_id": "EPRETQTL",
+                "unique_id": "VKQ1-8QU7-TQTL",
+                "diagnosis_codes": "E66.9;J45.909",
+                "service_code": "SRV1002",
+                "paid_amount_aed": 685.74,
+                "approval_number": "NA",
+                "status": "Not Validated",
+                "error_type": "Both",
+                "error_explanation": [
+                    "SRV1002 (ICU Stay) requires prior approval.",
+                    "Paid amount 685.74 AED exceeds 250 AED, requires prior approval.",
+                    "SRV1002 is restricted to inpatient encounters, but claim is outpatient.",
+                    "SRV1002 is not allowed at DIALYSIS_CENTER (EPRETQTL)."
+                ],
+                "recommended_action": [
+                    "Obtain prior approval for SRV1002",
+                    "Obtain prior approval for paid amount",
+                    "Change encounter type to INPATIENT",
+                    "Update to a compatible facility (e.g., GENERAL_HOSPITAL)"
+                ]
+            }
+        ]
+    }
+    
+    # Save expected output
+    with open('expected_output.json', 'w') as f:
+        json.dump(expected_output, f, indent=2)
+    
+    print("Expected output saved to expected_output.json")
+
+if __name__ == "__main__":
+    main()

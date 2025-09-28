@@ -4,7 +4,7 @@ from ..extensions import db
 from sqlalchemy.types import JSON
 
 
-ErrorTypeEnum = SAEnum("Technical", "Medical", "Both", "No error", name="error_type_enum")
+ErrorTypeEnum = SAEnum("Technical error", "Medical error", "Administrative", "Both", "No error", name="error_type_enum")
 StatusEnum = SAEnum("Validated", "Not Validated", "pending", name="status_enum")
 
 
