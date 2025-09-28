@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -8,7 +9,7 @@ class AppConfig:
     database_url: str
     jwt_secret_key: str
     jwt_access_minutes: int
-    google_api_key: str | None
+    google_api_key: Optional[str]
     default_tenant_id: str
     max_upload_mb: int
 
@@ -30,4 +31,3 @@ class AppConfig:
             default_tenant_id=os.getenv("DEFAULT_TENANT_ID", "tenant_demo"),
             max_upload_mb=int(os.getenv("MAX_UPLOAD_SIZE_MB", "25")),
         )
-
