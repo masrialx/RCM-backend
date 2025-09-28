@@ -533,16 +533,7 @@ Application logs are available in:
 4. Add tests for new functionality
 5. Submit a pull request
 
-## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📞 Support
-
-For support and questions:
-- Email: careers@humaein.com
-- Documentation: [Link to docs]
-- Issues: [GitHub Issues]
 
 ---
 
