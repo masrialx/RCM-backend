@@ -200,6 +200,27 @@ class TestValidationTools(unittest.TestCase):
         self.assertEqual(result.error_type, "Both")
         self.assertGreater(len(result.explanations), 0)
         self.assertGreater(len(result.recommended_actions), 0)
+    def setUp(self):
+        """Set up test fixtures"""
+        self.rules = RulesBundle(
+            diagnoses_requiring_approval={"E11.9", "R07.9"},
+            facility_registry={"FAC001": "Hospital A", "FAC002": "Clinic B"},
+            service_allowed_facility_types=["Hospital", "Clinic"],
+            services_requiring_approval={"SRV1001", "SRV1002", "SRV2008"},
+            diagnoses={"E11.9", "R07.9", "Z34.0", "E66.3", "E66.9", "I10", "J45.909"},
+            paid_threshold_aed=250.0,
+            id_rules={
+                "uppercase_required": True,
+                "patterns": {
+                    "national_id": "^[A-Z0-9]{5,}$",
+                    "member_id": "^[A-Z0-9]{5,}$",
+                    "facility_id": "^[A-Z0-9]{3,}$"
+                }
+            },
+            raw_rules_text="Test rules"
+        )
+        self.session = Mock()
+        self.tools = ValidationTools(self.rules, self.session)
 
 
 if __name__ == "__main__":
