@@ -28,7 +28,7 @@ langchain-core==0.3.15
 MarkupSafe==3.0.2
 marshmallow==3.22.0
 numpy
-packaging==25.0
+packaging
 pandas==2.2.3
 proto-plus==1.26.1
 protobuf==5.29.5
