@@ -1,6 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -16,7 +17,7 @@ class RulesBundle:
 
 
 class TenantConfigLoader:
-    def __init__(self, base_path: str | None = None) -> None:
+    def __init__(self, base_path: Optional[str] = None) -> None:
         self.base_path = base_path or os.getcwd()
 
     def _tenant_config_path(self, tenant_id: str) -> str:
@@ -53,7 +54,7 @@ class TenantConfigLoader:
 
         # Only specific diagnoses require approval as per requirements
         diagnoses_requiring_approval = {"E11.9", "R07.9", "Z34.0"}
-        
+
         return RulesBundle(
             services_requiring_approval=services,
             diagnoses=diagnoses,
@@ -64,4 +65,3 @@ class TenantConfigLoader:
             facility_registry=facility_registry,
             service_allowed_facility_types=service_allowed_facility_types,
         )
-
