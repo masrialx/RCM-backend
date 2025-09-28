@@ -222,7 +222,63 @@ def query_agent():
         if not claim:
             return jsonify({"message": "Claim not found"}), 404
         
-        # Simple analysis without complex agent
+        # Enriched, structured analysis while preserving existing keys used by the frontend
+        errors_list = claim.error_explanation or []
+        recs_list = claim.recommended_action or []
+        error_count = len(errors_list)
+
+        def _severity(status: str | None, error_type: str | None, count: int) -> str:
+            s = (status or "").lower()
+            e = (error_type or "").lower()
+            if s in {"invalid", "not validated"}:
+                if e == "both" or count >= 3:
+                    return "High"
+                if e in {"medical error", "technical error"} or count == 2:
+                    return "Medium"
+                return "Low"
+            if s in {"valid", "validated"}:
+                if e in {"", "none", "no error", None} and count == 0:
+                    return "None"
+                return "Low"
+            return "Medium"
+
+        sev = _severity(claim.status, claim.error_type, error_count)
+
+        headline = []
+        headline.append(f"Claim {claim_id} — {claim.encounter_type or 'N/A'} encounter")
+        if claim.service_date:
+            headline.append(f"Service date: {claim.service_date.isoformat()}")
+        if claim.service_code:
+            headline.append(f"Service code: {claim.service_code}")
+        if claim.paid_amount_aed is not None:
+            try:
+                amt = float(claim.paid_amount_aed)
+                headline.append(f"Paid amount: AED {amt:,.2f}")
+            except Exception:  # noqa: BLE001
+                pass
+
+        analysis_text = (
+            f"Status: {claim.status or 'Unknown'} | Error type: {claim.error_type or 'None'} | "
+            f"Issues found: {error_count} | Severity: {sev}. "
+            f"{' '.join(headline)}"
+        )
+
+        reasoning_lines = []
+        if errors_list:
+            reasoning_lines.append("Top issues:")
+            for idx, err in enumerate(errors_list[:5], start=1):
+                reasoning_lines.append(f"{idx}. {err}")
+        else:
+            reasoning_lines.append("No rule violations detected.")
+
+        if recs_list:
+            reasoning_lines.append("\nRecommended next actions:")
+            for idx, r in enumerate(recs_list[:5], start=1):
+                reasoning_lines.append(f"{idx}. {r}")
+        else:
+            if (claim.status or '').lower() in {"invalid", "not validated"}:
+                reasoning_lines.append("\nRecommended next actions: 1) Review coding and documentation, 2) Fix discrepancies, 3) Re-validate.")
+
         analysis = {
             "claim_id": claim_id,
             "query": query,
@@ -235,21 +291,21 @@ def query_agent():
                 "unique_id": claim.unique_id,
                 "diagnosis_codes": claim.diagnosis_codes,
                 "service_code": claim.service_code,
-                "paid_amount_aed": float(claim.paid_amount_aed) if claim.paid_amount_aed else None,
+                "paid_amount_aed": float(claim.paid_amount_aed) if claim.paid_amount_aed is not None else None,
                 "approval_number": claim.approval_number,
                 "status": claim.status,
                 "error_type": claim.error_type,
-                "error_explanation": claim.error_explanation or [],
-                "recommended_action": claim.recommended_action or []
+                "error_explanation": errors_list,
+                "recommended_action": recs_list
             },
             "agent_response": {
                 "status": "Processed",
-                "analysis": f"Based on the query '{query}', here's the analysis of claim {claim_id}:",
+                "analysis": analysis_text,
                 "current_status": claim.status,
                 "error_type": claim.error_type,
-                "errors": claim.error_explanation or [],
-                "recommendations": claim.recommended_action or [],
-                "reasoning": f"This claim has been processed with status '{claim.status}' and error type '{claim.error_type}'. The validation found {len(claim.error_explanation or [])} issues that need attention."
+                "errors": errors_list,
+                "recommendations": recs_list,
+                "reasoning": "\n".join(reasoning_lines)
             }
         }
         

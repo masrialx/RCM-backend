@@ -83,17 +83,42 @@ class ValidationEngine:
             )
             self.session.add(audit_start)
             
-            errors = self.validator.run_all(claim)
-            current_app.logger.debug(f"Validator result for {claim.claim_id}: {errors}")
-            if errors and errors.get("error_type") != "No error":
+            result = self.validator.run_all(claim)
+            current_app.logger.debug(f"Validator result for {claim.claim_id}: {result}")
+
+            # Apply any auto-corrections suggested by validator
+            corrections = (result or {}).get("corrections", {}) if result else {}
+            if corrections:
+                if "approval_number" in corrections:
+                    claim.approval_number = corrections["approval_number"]
+                if "unique_id" in corrections:
+                    claim.unique_id = corrections["unique_id"]
+                if "encounter_type" in corrections:
+                    claim.encounter_type = corrections["encounter_type"]
+                self.session.add(claim)
+
+            # Map error types to requested categories
+            def _map_error_type(val: str | None) -> str:
+                v = (val or "No error").strip()
+                if v == "Technical":
+                    return "Administrative"
+                if v == "Both":
+                    return "Medical"
+                return v
+
+            if result and result.get("error_type") != "No error":
                 claim.status = "Not Validated"
-                claim.error_type = errors["error_type"]
-                claim.error_explanation = errors.get("explanations", [])
-                claim.recommended_action = errors.get("recommended_actions", [])
+                claim.error_type = _map_error_type(result["error_type"])  # map Technical->Administrative
+                claim.error_explanation = result.get("explanations", [])
+                claim.recommended_action = result.get("recommended_actions", [])
                 failed += 1
             else:
                 claim.status = "Validated"
                 claim.error_type = "No error"
+                # If only corrections occurred, persist brief explanation and actions
+                if result and (result.get("explanations") or result.get("recommended_actions")):
+                    claim.error_explanation = result.get("explanations", [])
+                    claim.recommended_action = result.get("recommended_actions", [])
                 validated += 1
             self.session.add(claim)
             
@@ -105,7 +130,7 @@ class ValidationEngine:
                 details={
                     "final_status": claim.status,
                     "final_error_type": claim.error_type,
-                    "error_count": len(errors.get("explanations", [])) if errors else 0,
+                    "error_count": len(result.get("explanations", [])) if result else 0,
                     "validation_method": "static_rules"
                 },
                 tenant_id=self.tenant_id,
@@ -245,7 +270,10 @@ def split_codes(val):
     if isinstance(val, list):
         return [str(x).strip().upper() for x in val]
     s = str(val)
-    parts = [p.strip().upper() for p in s.split(",") if p.strip()]
+    # Support both semicolon and comma separated diagnosis codes
+    # Normalize by replacing semicolons with commas then splitting
+    normalized = s.replace(";", ",")
+    parts = [p.strip().upper() for p in normalized.split(",") if p.strip()]
     return parts
 
 

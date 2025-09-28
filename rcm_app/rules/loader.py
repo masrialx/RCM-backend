@@ -11,6 +11,8 @@ class RulesBundle:
     paid_threshold_aed: float
     id_rules: dict
     raw_rules_text: str
+    facility_registry: dict
+    service_allowed_facility_types: dict
 
 
 class TenantConfigLoader:
@@ -32,6 +34,8 @@ class TenantConfigLoader:
         diagnoses_path = os.path.join(rules_dir, cfg["diagnoses_file"])  # list
         threshold = float(cfg.get("paid_threshold_aed", 250))
         id_rules = cfg.get("id_rules", {})
+        facility_registry = id_rules.get("facility_registry", {})
+        service_allowed_facility_types = id_rules.get("service_allowed_facility_types", {})
 
         def load_list(path: str) -> set[str]:
             with open(path, "r", encoding="utf-8") as fh:
@@ -58,5 +62,7 @@ class TenantConfigLoader:
             paid_threshold_aed=threshold,
             id_rules=id_rules,
             raw_rules_text=raw_rules_text,
+            facility_registry=facility_registry,
+            service_allowed_facility_types=service_allowed_facility_types,
         )
 
