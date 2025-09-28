@@ -1,0 +1,2 @@
+claim_id,encounter_type,service_date,national_id,member_id,facility_id,unique_id,diagnosis_codes,service_code,paid_amount_aed,approval_number
+test-003,INPATIENT,2023-01-03,123456791,ABC125,HOSP003,TEST-003-003,Z34.0,SRV1001,200.75,APP003

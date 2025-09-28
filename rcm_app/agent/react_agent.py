@@ -128,6 +128,8 @@ For each claim, provide:
 - confidence: float between 0.0 and 1.0
 
 Question: {input}
+
+{agent_scratchpad}
 """)
         
         agent = create_react_agent(

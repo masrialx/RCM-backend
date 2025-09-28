@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from flask import Flask, jsonify
+from flask_cors import CORS
 from .extensions import db, jwt
 from .settings import AppConfig
 from .api import register_blueprints
@@ -23,6 +24,13 @@ def create_app(config: AppConfig | None = None) -> Flask:
 
     db.init_app(app)
     jwt.init_app(app)
+    
+    # Enable CORS for all routes
+    CORS(app, origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"], 
+         allow_headers=["Content-Type", "Authorization"], 
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         supports_credentials=True,
+         max_age=3600)
 
     register_blueprints(app)
 
