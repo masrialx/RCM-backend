@@ -1,41 +1,19 @@
-version: '3.8'
+# Use Python 3.11 base image for compatibility with new typing syntax
+FROM python:3.11-slim
 
-services:
-  rcm-backend:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - GEMINI_MODEL=gemini-2.0-flash
-      - DATABASE_URL=postgresql://rcm_user:rcm_password@postgres:5432/rcm_db
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - FLASK_ENV=production
-    depends_on:
-      - postgres
-    volumes:
-      - ./configs:/app/configs
-      - ./rules:/app/rules
-    restart: unless-stopped
+WORKDIR /app
 
-  postgres:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=rcm_db
-      - POSTGRES_USER=rcm_user
-      - POSTGRES_PASSWORD=rcm_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-  redis:
-    image: redis:6-alpine
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
+# Copy app source code
+COPY . .
 
-volumes:
-  postgres_data:
+# Create a non-root user if needed (optional)
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+
+USER appuser
+
+# Run your app
+CMD ["python", "run.py"]
