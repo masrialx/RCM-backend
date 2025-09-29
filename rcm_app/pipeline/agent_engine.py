@@ -35,8 +35,9 @@ class AgentValidationEngine:
     def ingest_and_validate_dataframe(self, df) -> dict[str, Any]:
         """Ingest CSV data and validate using AI agent"""
         required_cols = [
-            "encounter_type", "service_date", "national_id", "member_id", 
-            "facility_id", "unique_id", "diagnosis_codes", "service_code", 
+            # claim_id / unique_id handled canonically; either may be absent
+            "encounter_type", "service_date", "national_id", "member_id",
+            "facility_id", "diagnosis_codes", "service_code",
             "paid_amount_aed", "approval_number"
         ]
         
@@ -45,19 +46,25 @@ class AgentValidationEngine:
                 raise ValueError(f"missing required column: {col}")
 
         inserted = 0
-        claims = []
+        claims: List[Master] = []
         
         # Insert claims into Master table
         for _, row in df.iterrows():
-            auto_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
+            input_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
+            input_unique_id = str(row.get("unique_id")) if "unique_id" in df.columns else None
+            # Canonicalize identifier: prefer explicit claim_id; else unique_id; else UUID
+            canonical_id = (input_claim_id or input_unique_id or str(uuid4())).strip()
+            # Ensure both fields align to avoid conflicts
+            normalized_unique = input_unique_id.strip() if input_unique_id else None
+            aligned_unique = normalized_unique if normalized_unique else canonical_id
             claim = Master(
-                claim_id=auto_claim_id or str(uuid4()),
+                claim_id=canonical_id,
                 encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
                 service_date=pd_to_date(row.get("service_date")),
                 national_id=upper_or_none(row.get("national_id")),
                 member_id=upper_or_none(row.get("member_id")),
                 facility_id=upper_or_none(row.get("facility_id")),
-                unique_id=str(row.get("unique_id")) if row.get("unique_id") is not None else None,
+                unique_id=aligned_unique,
                 diagnosis_codes=split_codes(row.get("diagnosis_codes")),
                 service_code=upper_or_none(row.get("service_code")),
                 paid_amount_aed=to_decimal(row.get("paid_amount_aed")),

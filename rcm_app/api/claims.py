@@ -30,13 +30,62 @@ def upload_claims():
         content = file.read()
         buf = BytesIO(content)
         if filename.endswith(".csv"):
-            df = pd.read_csv(buf)
+            # Robust CSV parsing: try common delimiters and encodings
+            parse_attempts = [
+                {"sep": ",", "encoding": None},
+                {"sep": ";", "encoding": None},
+                {"sep": "\t", "encoding": None},
+            ]
+            last_exc = None
+            df = None
+            for attempt in parse_attempts:
+                try:
+                    buf.seek(0)
+                    df = pd.read_csv(
+                        buf,
+                        dtype=str,
+                        keep_default_na=False,
+                        na_filter=False,
+                        sep=attempt["sep"],
+                    )
+                    break
+                except Exception as e:  # noqa: BLE001
+                    last_exc = e
+            if df is None:
+                raise last_exc or Exception("could not parse CSV")
         elif filename.endswith(".xlsx") or filename.endswith(".xls"):
-            df = pd.read_excel(buf)
+            df = pd.read_excel(buf, dtype=str)
         else:
             return jsonify({"message": "unsupported file type"}), 415
     except Exception as exc:  # noqa: BLE001
         return jsonify({"message": f"failed to parse file: {exc}"}), 400
+
+    # Normalize column names (trim, lower)
+    df.columns = [str(c).strip().lower() for c in df.columns]
+    # Map common aliases to required columns
+    col_aliases = {
+        "claimid": "claim_id",
+        "id": "claim_id",
+        "uniqueid": "unique_id",
+        "uid": "unique_id",
+        "diagnosis": "diagnosis_codes",
+        "diagnoses": "diagnosis_codes",
+        "paid_amount": "paid_amount_aed",
+        "paid_amount_aed": "paid_amount_aed",
+        "approval": "approval_number",
+        "approvalno": "approval_number",
+    }
+    df.rename(columns={k: v for k, v in col_aliases.items() if k in df.columns}, inplace=True)
+    # Align identifiers as in upload: mirror whichever exists
+    if "claim_id" not in df.columns and "unique_id" in df.columns:
+        df["claim_id"] = df["unique_id"].astype(str)
+    if "unique_id" not in df.columns and "claim_id" in df.columns:
+        df["unique_id"] = df["claim_id"].astype(str)
+    # Align identifiers: if only one of claim_id/unique_id is provided, mirror it
+    if "claim_id" not in df.columns and "unique_id" in df.columns:
+        df["claim_id"] = df["unique_id"].astype(str)
+    if "unique_id" not in df.columns and "claim_id" in df.columns:
+        df["unique_id"] = df["claim_id"].astype(str)
 
     tenant_loader = TenantConfigLoader()
     rules_bundle = tenant_loader.load_rules_for_tenant(tenant_id)
@@ -222,13 +271,54 @@ def adjudicate_claims():
         content = file.read()
         buf = BytesIO(content)
         if filename.endswith(".csv"):
-            df = pd.read_csv(buf)
+            parse_attempts = [
+                {"sep": ","},
+                {"sep": ";"},
+                {"sep": "\t"},
+            ]
+            last_exc = None
+            df = None
+            for attempt in parse_attempts:
+                try:
+                    buf.seek(0)
+                    df = pd.read_csv(
+                        buf,
+                        dtype=str,
+                        keep_default_na=False,
+                        na_filter=False,
+                        sep=attempt["sep"],
+                    )
+                    break
+                except Exception as e:  # noqa: BLE001
+                    last_exc = e
+            if df is None:
+                raise last_exc or Exception("could not parse CSV")
         elif filename.endswith(".xlsx") or filename.endswith(".xls"):
-            df = pd.read_excel(buf)
+            df = pd.read_excel(buf, dtype=str)
         else:
             return jsonify({"message": "unsupported file type"}), 415
     except Exception as exc:  # noqa: BLE001
         return jsonify({"message": f"failed to parse file: {exc}"}), 400
+
+    # Normalize column names and aliases for adjudication
+    df.columns = [str(c).strip().lower() for c in df.columns]
+    col_aliases = {
+        "claimid": "claim_id",
+        "id": "claim_id",
+        "uniqueid": "unique_id",
+        "uid": "unique_id",
+        "diagnosis": "diagnosis_codes",
+        "diagnoses": "diagnosis_codes",
+        "paid_amount": "paid_amount_aed",
+        "paid_amount_aed": "paid_amount_aed",
+        "approval": "approval_number",
+        "approvalno": "approval_number",
+    }
+    df.rename(columns={k: v for k, v in col_aliases.items() if k in df.columns}, inplace=True)
+    if "claim_id" not in df.columns and "unique_id" in df.columns:
+        df["claim_id"] = df["unique_id"].astype(str)
+    if "unique_id" not in df.columns and "claim_id" in df.columns:
+        df["unique_id"] = df["claim_id"].astype(str)
 
     tenant_loader = TenantConfigLoader()
     rules_bundle = tenant_loader.load_rules_for_tenant(tenant_id)

@@ -39,23 +39,48 @@ class ValidationEngine:
 
         inserted = 0
         for _, row in df.iterrows():
-            auto_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
-            claim = Master(
-                claim_id=auto_claim_id or str(uuid4()),
-                encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
-                service_date=pd_to_date(row.get("service_date")),
-                national_id=upper_or_none(row.get("national_id")),
-                member_id=upper_or_none(row.get("member_id")),
-                facility_id=upper_or_none(row.get("facility_id")),
-                unique_id=str(row.get("unique_id")) if row.get("unique_id") is not None else None,
-                diagnosis_codes=split_codes(row.get("diagnosis_codes")),
-                service_code=upper_or_none(row.get("service_code")),
-                paid_amount_aed=to_decimal(row.get("paid_amount_aed")),
-                approval_number=upper_or_none(row.get("approval_number")),
-                tenant_id=self.tenant_id,
-            )
-            self.session.add(claim)
-            inserted += 1
+            input_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
+            input_unique_id = str(row.get("unique_id")) if "unique_id" in df.columns else None
+            # Canonicalize identifier: prefer explicit claim_id; else unique_id; else UUID
+            canonical_id = (input_claim_id or input_unique_id or str(uuid4())).strip()
+            # Ensure both fields align to avoid conflicts
+            normalized_unique = input_unique_id.strip() if input_unique_id else None
+            aligned_unique = normalized_unique if normalized_unique else canonical_id
+            # Upsert by (tenant_id, claim_id) to avoid unique constraint failures
+            existing = Master.query.filter(
+                Master.tenant_id == self.tenant_id,
+                Master.claim_id == canonical_id,
+            ).first()
+            if existing:
+                claim = existing
+                claim.encounter_type = str(row.get("encounter_type")) if row.get("encounter_type") is not None else claim.encounter_type
+                claim.service_date = pd_to_date(row.get("service_date")) or claim.service_date
+                claim.national_id = upper_or_none(row.get("national_id")) or claim.national_id
+                claim.member_id = upper_or_none(row.get("member_id")) or claim.member_id
+                claim.facility_id = upper_or_none(row.get("facility_id")) or claim.facility_id
+                claim.unique_id = aligned_unique or claim.unique_id
+                claim.diagnosis_codes = split_codes(row.get("diagnosis_codes")) or claim.diagnosis_codes
+                claim.service_code = upper_or_none(row.get("service_code")) or claim.service_code
+                claim.paid_amount_aed = to_decimal(row.get("paid_amount_aed")) or claim.paid_amount_aed
+                claim.approval_number = upper_or_none(row.get("approval_number")) or claim.approval_number
+                self.session.add(claim)
+            else:
+                claim = Master(
+                    claim_id=canonical_id,
+                    encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
+                    service_date=pd_to_date(row.get("service_date")),
+                    national_id=upper_or_none(row.get("national_id")),
+                    member_id=upper_or_none(row.get("member_id")),
+                    facility_id=upper_or_none(row.get("facility_id")),
+                    unique_id=aligned_unique,
+                    diagnosis_codes=split_codes(row.get("diagnosis_codes")),
+                    service_code=upper_or_none(row.get("service_code")),
+                    paid_amount_aed=to_decimal(row.get("paid_amount_aed")),
+                    approval_number=upper_or_none(row.get("approval_number")),
+                    tenant_id=self.tenant_id,
+                )
+                self.session.add(claim)
+                inserted += 1
         self.session.commit()
 
         stats = self._validate_new_claims()
@@ -365,23 +390,45 @@ class ValidationEngine:
         
         # Process each claim with comprehensive validation
         for _, row in df.iterrows():
-            auto_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
-            claim = Master(
-                claim_id=auto_claim_id or str(uuid4()),
-                encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
-                service_date=pd_to_date(row.get("service_date")),
-                national_id=upper_or_none(row.get("national_id")),
-                member_id=upper_or_none(row.get("member_id")),
-                facility_id=upper_or_none(row.get("facility_id")),
-                unique_id=str(row.get("unique_id")) if row.get("unique_id") is not None else None,
-                diagnosis_codes=split_codes(row.get("diagnosis_codes")),
-                service_code=upper_or_none(row.get("service_code")),
-                paid_amount_aed=to_decimal(row.get("paid_amount_aed")),
-                approval_number=upper_or_none(row.get("approval_number")),
-                tenant_id=self.tenant_id,
-            )
-            self.session.add(claim)
-            inserted += 1
+            input_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
+            input_unique_id = str(row.get("unique_id")) if "unique_id" in df.columns else None
+            canonical_id = (input_claim_id or input_unique_id or str(uuid4())).strip()
+            normalized_unique = input_unique_id.strip() if input_unique_id else None
+            aligned_unique = normalized_unique if normalized_unique else canonical_id
+            existing = Master.query.filter(
+                Master.tenant_id == self.tenant_id,
+                Master.claim_id == canonical_id,
+            ).first()
+            if existing:
+                claim = existing
+                claim.encounter_type = str(row.get("encounter_type")) if row.get("encounter_type") is not None else claim.encounter_type
+                claim.service_date = pd_to_date(row.get("service_date")) or claim.service_date
+                claim.national_id = upper_or_none(row.get("national_id")) or claim.national_id
+                claim.member_id = upper_or_none(row.get("member_id")) or claim.member_id
+                claim.facility_id = upper_or_none(row.get("facility_id")) or claim.facility_id
+                claim.unique_id = aligned_unique or claim.unique_id
+                claim.diagnosis_codes = split_codes(row.get("diagnosis_codes")) or claim.diagnosis_codes
+                claim.service_code = upper_or_none(row.get("service_code")) or claim.service_code
+                claim.paid_amount_aed = to_decimal(row.get("paid_amount_aed")) or claim.paid_amount_aed
+                claim.approval_number = upper_or_none(row.get("approval_number")) or claim.approval_number
+                self.session.add(claim)
+            else:
+                claim = Master(
+                    claim_id=canonical_id,
+                    encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
+                    service_date=pd_to_date(row.get("service_date")),
+                    national_id=upper_or_none(row.get("national_id")),
+                    member_id=upper_or_none(row.get("member_id")),
+                    facility_id=upper_or_none(row.get("facility_id")),
+                    unique_id=aligned_unique,
+                    diagnosis_codes=split_codes(row.get("diagnosis_codes")),
+                    service_code=upper_or_none(row.get("service_code")),
+                    paid_amount_aed=to_decimal(row.get("paid_amount_aed")),
+                    approval_number=upper_or_none(row.get("approval_number")),
+                    tenant_id=self.tenant_id,
+                )
+                self.session.add(claim)
+                inserted += 1
             
             # Comprehensive validation with detailed output
             result = self.validator.run_all(claim)
