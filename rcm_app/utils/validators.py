@@ -20,7 +20,8 @@ class Validator:
         }
         # Additional service-diagnosis mappings as per requirements
         self.service_diagnosis_map.update({
-            "SRV2005": {"N39.0"}  # N39.0 → SRV2005
+            "SRV2005": {"N39.0"},  # N39.0 → SRV2005
+            "SRV2001": {"R07.9"},  # ECG requires chest pain diagnosis per example
         })
         # Mutually exclusive diagnosis pairs or groups
         self.mutually_exclusive_diagnoses: list[set[str]] = [
@@ -56,13 +57,27 @@ class Validator:
                     types.add("Technical")
                     current_app.logger.debug(f"  Uppercase error: {fld}={val}")
         
-        # Unique ID validation - only flag format issues, don't auto-correct
+        # Unique ID validation - format and content
         if claim.unique_id:
             # Check if unique_id is in correct format (uppercase with hyphens)
             if not re.fullmatch(r"^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$", claim.unique_id or ""):
                 errors.append("unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)")
                 types.add("Technical")
                 current_app.logger.debug(f"  Unique ID format error: {claim.unique_id}")
+            # Check content matches first4(national_id)-middle4(member_id)-last4(facility_id)
+            ni = (claim.national_id or "").strip().upper()
+            mi = (claim.member_id or "").strip().upper()
+            fi = (claim.facility_id or "").strip().upper()
+            if ni and mi and fi:
+                first4 = ni[:4].ljust(4, "X")
+                # middle4 of member_id: first 4 characters per rule
+                middle4 = mi[:4].ljust(4, "X")
+                last4 = fi[-4:].rjust(4, "X")
+                expected_uid = f"{first4}-{middle4}-{last4}"
+                if (claim.unique_id or "").strip().upper() != expected_uid:
+                    errors.append(f"unique_id format is invalid (should be {expected_uid}).")
+                    types.add("Technical")
+                    current_app.logger.debug(f"  Unique ID content mismatch: got={claim.unique_id}, expected={expected_uid}")
 
         for fld, pat in self.id_patterns.items():
             val = getattr(claim, fld, None)
@@ -167,15 +182,15 @@ class Validator:
                 types.add("Medical")  # Changed from Technical to Medical
                 current_app.logger.debug(f"  Encounter type error: service={claim.service_code} requires OUTPATIENT, got={claim.encounter_type}")
 
-        # Facility type eligibility checks (if configured) - DISABLED for now
-        # if claim.facility_id and claim.service_code:
-        #     fac_type = self.facility_registry.get(claim.facility_id)
-        #     allowed = self.service_allowed_facility_types.get(claim.service_code)
-        #     if fac_type and allowed and fac_type not in allowed:
-        #         errors.append(f"Service {claim.service_code} not allowed for facility type {fac_type}")
-        #         actions.append("Route to an allowed facility type or adjust service code")
-        #         types.add("Medical")
-        #         current_app.logger.debug(f"  Facility type error: service={claim.service_code} not allowed at {fac_type} (facility={claim.facility_id})")
+        # Facility type eligibility checks (if configured)
+        if claim.facility_id and claim.service_code:
+            fac_type = self.facility_registry.get((claim.facility_id or "").strip().upper())
+            allowed = self.service_allowed_facility_types.get(claim.service_code)
+            if fac_type and allowed and fac_type not in allowed:
+                errors.append(f"Service {claim.service_code} not allowed for facility type {fac_type}")
+                actions.append("Route to an allowed facility type or adjust service code")
+                types.add("Medical")
+                current_app.logger.debug(f"  Facility type error: service={claim.service_code} not allowed at {fac_type} (facility={claim.facility_id})")
 
         # Deduplicate and clean actions
         if actions:

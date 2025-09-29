@@ -1,5 +1,4 @@
 # service codes that require approval
 SRV1001
 SRV1002
-SRV1003
 SRV2008

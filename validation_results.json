@@ -1,0 +1,399 @@
+{
+  "claims": [
+    {
+      "claim_id": "# Encounter type constraints",
+      "encounter_type": "nan",
+      "service_date": null,
+      "national_id": "NAN",
+      "member_id": "NAN",
+      "facility_id": "NAN",
+      "unique_id": "# Encounter type constraints",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "NAN",
+      "paid_amount_aed": NaN,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "ME1",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-01",
+      "national_id": "ABCD1",
+      "member_id": "EFGH1",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "SRV1001",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "Service SRV1001 is INPATIENT-only but encounter is OUTPATIENT"
+      ],
+      "recommended_action": [
+        "Change encounter type to INPATIENT or correct service code"
+      ]
+    },
+    {
+      "claim_id": "ME2",
+      "encounter_type": "INPATIENT",
+      "service_date": "2025-03-02",
+      "national_id": "ABCD2",
+      "member_id": "EFGH2",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "SRV2001",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "Service SRV2001 is OUTPATIENT-only but encounter is INPATIENT",
+        "service_code SRV2001 requires diagnoses: R07.9"
+      ],
+      "recommended_action": [
+        "Change encounter type to OUTPATIENT or correct service code",
+        "Add required diagnosis or adjust service"
+      ]
+    },
+    {
+      "claim_id": "# Facility type constraints",
+      "encounter_type": "nan",
+      "service_date": null,
+      "national_id": "NAN",
+      "member_id": "NAN",
+      "facility_id": "NAN",
+      "unique_id": "# Facility type constraints",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "NAN",
+      "paid_amount_aed": NaN,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "MF1",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-03",
+      "national_id": "ABCD3",
+      "member_id": "EFGH3",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "SRV2008",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "service_code SRV2008 requires diagnoses: Z34.0"
+      ],
+      "recommended_action": [
+        "Add required diagnosis or adjust service"
+      ]
+    },
+    {
+      "claim_id": "MF2",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-04",
+      "national_id": "ABCD4",
+      "member_id": "EFGH4",
+      "facility_id": "0DBYE6KP",
+      "unique_id": "ABCD-EFGH-0DBY",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "SRV2011",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "unique_id format is invalid (should be ABCD-EFGH-E6KP).",
+        "Service SRV2011 not allowed for facility type DIALYSIS_CENTER"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)",
+        "Route to an allowed facility type or adjust service"
+      ]
+    },
+    {
+      "claim_id": "MF3",
+      "encounter_type": "INPATIENT",
+      "service_date": "2025-03-05",
+      "national_id": "ABCD5",
+      "member_id": "EFGH5",
+      "facility_id": "EPRETQTL",
+      "unique_id": "ABCD-EFGH-EPRE",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "SRV2010",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "unique_id format is invalid (should be ABCD-EFGH-TQTL).",
+        "Service SRV2010 is OUTPATIENT-only but encounter is INPATIENT"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)",
+        "Change encounter type to OUTPATIENT or correct service code"
+      ]
+    },
+    {
+      "claim_id": "# Service-diagnosis dependencies",
+      "encounter_type": "nan",
+      "service_date": null,
+      "national_id": "NAN",
+      "member_id": "NAN",
+      "facility_id": "NAN",
+      "unique_id": "# Service-diagnosis dependencies",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "NAN",
+      "paid_amount_aed": NaN,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "MD1",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-06",
+      "national_id": "ABCD6",
+      "member_id": "EFGH6",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "E11.9"
+      ],
+      "service_code": "SRV2007",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    },
+    {
+      "claim_id": "MD2",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-07",
+      "national_id": "ABCD7",
+      "member_id": "EFGH7",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "J45.909"
+      ],
+      "service_code": "SRV2006",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    },
+    {
+      "claim_id": "MD3",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-08",
+      "national_id": "ABCD8",
+      "member_id": "EFGH8",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "R07.9"
+      ],
+      "service_code": "SRV2001",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    },
+    {
+      "claim_id": "MD4",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-09",
+      "national_id": "ABCD9",
+      "member_id": "EFGH9",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCD-EFGH-MGDW",
+      "diagnosis_codes": [
+        "Z34.0"
+      ],
+      "service_code": "SRV2008",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    },
+    {
+      "claim_id": "MD5",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-10",
+      "national_id": "ABCE0",
+      "member_id": "EFGI0",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCE-EFGI-MGDW",
+      "diagnosis_codes": [
+        "N39.0"
+      ],
+      "service_code": "SRV2003",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "Diagnosis N39.0 (UTI) requires SRV2005 Urine Culture"
+      ],
+      "recommended_action": [
+        "Order SRV2005 Urine Culture or update coding"
+      ]
+    },
+    {
+      "claim_id": "# Mutually exclusive diagnoses",
+      "encounter_type": "nan",
+      "service_date": null,
+      "national_id": "NAN",
+      "member_id": "NAN",
+      "facility_id": "NAN",
+      "unique_id": "# Mutually exclusive diagnoses",
+      "diagnosis_codes": [
+        "NAN"
+      ],
+      "service_code": "NAN",
+      "paid_amount_aed": NaN,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "MX1",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-11",
+      "national_id": "ABCF1",
+      "member_id": "EFGJ1",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCF-EFGJ-MGDW",
+      "diagnosis_codes": [
+        "R73.03",
+        "E11.9"
+      ],
+      "service_code": "SRV2003",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "mutually exclusive diagnoses present: E11.9, R73.03"
+      ],
+      "recommended_action": [
+        "Review diagnosis coding; pick the most specific condition"
+      ]
+    },
+    {
+      "claim_id": "MX2",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-12",
+      "national_id": "ABCF2",
+      "member_id": "EFGJ2",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCF-EFGJ-MGDW",
+      "diagnosis_codes": [
+        "E66.3",
+        "E66.9"
+      ],
+      "service_code": "SRV2003",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "mutually exclusive diagnoses present: E66.3, E66.9"
+      ],
+      "recommended_action": [
+        "Review diagnosis coding; pick the most specific condition"
+      ]
+    },
+    {
+      "claim_id": "MX3",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-03-13",
+      "national_id": "ABCF3",
+      "member_id": "EFGJ3",
+      "facility_id": "OCQUMGDW",
+      "unique_id": "ABCF-EFGJ-MGDW",
+      "diagnosis_codes": [
+        "R51",
+        "G43.9"
+      ],
+      "service_code": "SRV2003",
+      "paid_amount_aed": 100.0,
+      "approval_number": "NAN",
+      "status": "Not Validated",
+      "error_type": "Medical",
+      "error_explanation": [
+        "mutually exclusive diagnoses present: G43.9, R51"
+      ],
+      "recommended_action": [
+        "Review diagnosis coding; pick the most specific condition"
+      ]
+    }
+  ],
+  "summary": {
+    "total_claims": 17,
+    "approved": 4,
+    "denied": 13,
+    "error_counts_by_type": {
+      "Technical": 4,
+      "Medical": 7,
+      "Both": 2,
+      "No error": 4
+    }
+  }
+}

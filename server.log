@@ -6,7 +6,9 @@ nohup: ignoring input
  * Running on http://127.0.0.1:8000
  * Running on http://10.57.173.20:8000
 [33mPress CTRL+C to quit[0m
-127.0.0.1 - - [29/Sep/2025 23:01:10] "POST /api/auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [29/Sep/2025 23:20:37] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [29/Sep/2025 23:20:43] "POST /api/auth/login HTTP/1.1" 200 -
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1759176071.912191   61063 alts_credentials.cc:93] ALTS creds ignored. Not running on GCP and untrusted ALTS is not enabled.
-127.0.0.1 - - [29/Sep/2025 23:01:15] "POST /api/upload HTTP/1.1" 200 -
+E0000 00:00:1759177244.046788   62738 alts_credentials.cc:93] ALTS creds ignored. Not running on GCP and untrusted ALTS is not enabled.
+127.0.0.1 - - [29/Sep/2025 23:20:48] "POST /api/upload HTTP/1.1" 200 -
+127.0.0.1 - - [29/Sep/2025 23:21:07] "GET /api/results?tenant_id=tenant_demo HTTP/1.1" 200 -
