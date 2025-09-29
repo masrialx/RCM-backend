@@ -1,0 +1,81 @@
+{
+  "claims": [
+    {
+      "claim_id": "CLAIM001",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-01",
+      "national_id": "ABCD1",
+      "member_id": "EFGH1",
+      "facility_id": "FC001",
+      "unique_id": "CLAIM001",
+      "diagnosis_codes": [
+        "E11.9"
+      ],
+      "service_code": "SRV2007",
+      "paid_amount_aed": 100.0,
+      "approval_number": "APP001",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "CLAIM002",
+      "encounter_type": "INPATIENT",
+      "service_date": "2025-01-02",
+      "national_id": "ABCD2",
+      "member_id": "EFGH2",
+      "facility_id": "FC002",
+      "unique_id": "CLAIM002",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV1003",
+      "paid_amount_aed": 200.0,
+      "approval_number": "APP002",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "CLAIM003",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-03",
+      "national_id": "ABCD3",
+      "member_id": "EFGH3",
+      "facility_id": "FC003",
+      "unique_id": "CLAIM003",
+      "diagnosis_codes": [
+        "R51"
+      ],
+      "service_code": "SRV2003",
+      "paid_amount_aed": 150.0,
+      "approval_number": "APP003",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    }
+  ],
+  "summary": {
+    "total_claims": 3,
+    "approved": 0,
+    "denied": 3,
+    "error_counts_by_type": {
+      "Technical": 3
+    }
+  }
+}

@@ -1,0 +1,6 @@
+claim_id,encounter_type,service_date,national_id,member_id,facility_id,unique_id,diagnosis_codes,service_code,paid_amount_aed,approval_number
+# This is a comment line
+TEST1,OUTPATIENT,2025-01-01,ABCD1,EFGH1,FC001,ABCD-EFGH-C001,"E11.9",SRV2007,100,APP001
+TEST2,INPATIENT,2025-01-02,ABCD2,EFGH2,FC002,ABCD-EFGH-C002,"E66.9",SRV1003,200,APP002
+# Another comment
+TEST3,OUTPATIENT,2025-01-03,ABCD3,EFGH3,FC003,ABCD-EFGH-C003,"R51",SRV2003,150,APP003

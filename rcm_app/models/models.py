@@ -12,13 +12,13 @@ class Master(db.Model):
     __tablename__ = "claims_master"
     __table_args__ = {"sqlite_autoincrement": True}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    claim_id = db.Column(db.String(64), unique=True, nullable=False)
+    claim_id = db.Column(db.String(64), unique=True, nullable=False)  # Primary identifier
     encounter_type = db.Column(db.String(64))
     service_date = db.Column(db.Date)
     national_id = db.Column(db.String(64))
     member_id = db.Column(db.String(64))
     facility_id = db.Column(db.String(64))
-    unique_id = db.Column(db.String(128))
+    # unique_id is now a computed property based on claim_id - they are the same identifier
     diagnosis_codes = db.Column(JSON, nullable=True)
     service_code = db.Column(db.String(64))
     paid_amount_aed = db.Column(db.Numeric(14, 2))
@@ -30,6 +30,16 @@ class Master(db.Model):
     tenant_id = db.Column(db.String(64), index=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    @property
+    def unique_id(self) -> str:
+        """unique_id is always the same as claim_id - they are the same identifier"""
+        return self.claim_id
+    
+    @unique_id.setter
+    def unique_id(self, value: str):
+        """Setting unique_id also sets claim_id - they are the same identifier"""
+        self.claim_id = value
 
 
 class Refined(db.Model):

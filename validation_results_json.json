@@ -1,0 +1,50 @@
+{
+  "claims": [
+    {
+      "claim_id": "JSON-01",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-01",
+      "national_id": "ABCD1",
+      "member_id": "EFGH1",
+      "facility_id": "FC001",
+      "unique_id": "ABCD-EFGH-C001",
+      "diagnosis_codes": [
+        "E11.9"
+      ],
+      "service_code": "SRV2007",
+      "paid_amount_aed": 100.0,
+      "approval_number": "APP001",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    },
+    {
+      "claim_id": "JSON-02",
+      "encounter_type": "INPATIENT",
+      "service_date": "2025-01-02",
+      "national_id": "ABCD2",
+      "member_id": "EFGH2",
+      "facility_id": "FC002",
+      "unique_id": "ABCD-EFGH-C002",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV1003",
+      "paid_amount_aed": 200.0,
+      "approval_number": "APP002",
+      "status": "Validated",
+      "error_type": "No error",
+      "error_explanation": [],
+      "recommended_action": []
+    }
+  ],
+  "summary": {
+    "total_claims": 2,
+    "approved": 2,
+    "denied": 0,
+    "error_counts_by_type": {
+      "No error": 2
+    }
+  }
+}

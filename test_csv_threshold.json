@@ -1,0 +1,131 @@
+{
+  "claims": [
+    {
+      "claim_id": "THRESHOLD1",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-01",
+      "national_id": "ABCD1",
+      "member_id": "EFGH1",
+      "facility_id": "FC001",
+      "unique_id": "THRESHOLD1",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV2002",
+      "paid_amount_aed": 200.0,
+      "approval_number": "",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "THRESHOLD2",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-02",
+      "national_id": "ABCD2",
+      "member_id": "EFGH2",
+      "facility_id": "FC002",
+      "unique_id": "THRESHOLD2",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV2002",
+      "paid_amount_aed": 250.0,
+      "approval_number": "",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "THRESHOLD3",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-03",
+      "national_id": "ABCD3",
+      "member_id": "EFGH3",
+      "facility_id": "FC003",
+      "unique_id": "THRESHOLD3",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV2002",
+      "paid_amount_aed": 300.0,
+      "approval_number": "",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)",
+        "Paid amount 300.0 exceeds threshold 250.0"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)",
+        "Obtain approval for amount exceeding threshold"
+      ]
+    },
+    {
+      "claim_id": "THRESHOLD4",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-04",
+      "national_id": "ABCD4",
+      "member_id": "EFGH4",
+      "facility_id": "FC004",
+      "unique_id": "THRESHOLD4",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV2002",
+      "paid_amount_aed": 500.0,
+      "approval_number": "APP001",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)"
+      ]
+    },
+    {
+      "claim_id": "THRESHOLD5",
+      "encounter_type": "OUTPATIENT",
+      "service_date": "2025-01-05",
+      "national_id": "ABCD5",
+      "member_id": "EFGH5",
+      "facility_id": "FC005",
+      "unique_id": "THRESHOLD5",
+      "diagnosis_codes": [
+        "E66.9"
+      ],
+      "service_code": "SRV2002",
+      "paid_amount_aed": 1000.0,
+      "approval_number": "",
+      "status": "Not Validated",
+      "error_type": "Technical",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)",
+        "Paid amount 1000.0 exceeds threshold 250.0"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)",
+        "Obtain approval for amount exceeding threshold"
+      ]
+    }
+  ],
+  "summary": {
+    "total_claims": 5,
+    "approved": 0,
+    "denied": 5,
+    "error_counts_by_type": {
+      "Technical": 5
+    }
+  }
+}

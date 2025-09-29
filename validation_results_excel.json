@@ -1,0 +1,38 @@
+{
+  "claims": [
+    {
+      "claim_id": "XLSX-01",
+      "encounter_type": "OPD",
+      "service_date": "2025-01-01",
+      "national_id": "NID1",
+      "member_id": "MID1",
+      "facility_id": "FID1",
+      "unique_id": "XLSX-01-UID",
+      "diagnosis_codes": [
+        "A10",
+        "B20"
+      ],
+      "service_code": "SRV1001",
+      "paid_amount_aed": 100.0,
+      "approval_number": "APR1",
+      "status": "Not Validated",
+      "error_type": "Both",
+      "error_explanation": [
+        "unique_id is invalid: must be uppercase alphanumeric with hyphen-separated format (XXXX-XXXX-XXXX)",
+        "Service SRV1001 is INPATIENT-only but encounter is OPD"
+      ],
+      "recommended_action": [
+        "Format unique_id as first4(national_id)-middle4(member_id)-last4(facility_id)",
+        "Change encounter type to INPATIENT or correct service code"
+      ]
+    }
+  ],
+  "summary": {
+    "total_claims": 1,
+    "approved": 0,
+    "denied": 1,
+    "error_counts_by_type": {
+      "Both": 1
+    }
+  }
+}

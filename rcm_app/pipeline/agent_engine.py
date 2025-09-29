@@ -50,21 +50,19 @@ class AgentValidationEngine:
         
         # Insert claims into Master table
         for _, row in df.iterrows():
+            # claim_id and unique_id are the same identifier - use whichever is provided
             input_claim_id = str(row.get("claim_id")) if "claim_id" in df.columns else None
             input_unique_id = str(row.get("unique_id")) if "unique_id" in df.columns else None
             # Canonicalize identifier: prefer explicit claim_id; else unique_id; else UUID
             canonical_id = (input_claim_id or input_unique_id or str(uuid4())).strip()
-            # Ensure both fields align to avoid conflicts
-            normalized_unique = input_unique_id.strip() if input_unique_id else None
-            aligned_unique = normalized_unique if normalized_unique else canonical_id
+            
             claim = Master(
-                claim_id=canonical_id,
+                claim_id=canonical_id,  # This automatically sets unique_id via property
                 encounter_type=str(row.get("encounter_type")) if row.get("encounter_type") is not None else None,
                 service_date=pd_to_date(row.get("service_date")),
                 national_id=upper_or_none(row.get("national_id")),
                 member_id=upper_or_none(row.get("member_id")),
                 facility_id=upper_or_none(row.get("facility_id")),
-                unique_id=aligned_unique,
                 diagnosis_codes=split_codes(row.get("diagnosis_codes")),
                 service_code=upper_or_none(row.get("service_code")),
                 paid_amount_aed=to_decimal(row.get("paid_amount_aed")),
