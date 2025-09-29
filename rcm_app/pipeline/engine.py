@@ -72,151 +72,86 @@ class ValidationEngine:
     def _validate_claims_list(self, claims: list[Master]) -> dict[str, Any]:
         validated = 0
         failed = 0
+        
         for claim in claims:
-            # Create audit record for validation start
-            audit_start = Audit(
-                claim_id=claim.claim_id,
-                action="validation_started",
-                outcome="in_progress",
-                details={"previous_status": claim.status, "previous_error_type": claim.error_type},
-                tenant_id=self.tenant_id,
-            )
-            self.session.add(audit_start)
-            
-            result = self.validator.run_all(claim)
-            current_app.logger.debug(f"Validator result for {claim.claim_id}: {result}")
+            try:
+                # Step 1: validation_started
+                self._log_audit_start(claim)
+                
+                # Step 2: Static rules validation
+                result = self.validator.run_all(claim)
+                current_app.logger.debug(f"Validator result for {claim.claim_id}: {result}")
 
-            # Apply any auto-corrections suggested by validator
-            corrections = (result or {}).get("corrections", {}) if result else {}
-            if corrections:
-                if "approval_number" in corrections:
-                    claim.approval_number = corrections["approval_number"]
-                if "unique_id" in corrections:
-                    claim.unique_id = corrections["unique_id"]
-                if "encounter_type" in corrections:
-                    claim.encounter_type = corrections["encounter_type"]
-                self.session.add(claim)
+                # Apply any auto-corrections suggested by validator
+                corrections = (result or {}).get("corrections", {}) if result else {}
+                if corrections:
+                    if "approval_number" in corrections:
+                        claim.approval_number = corrections["approval_number"]
+                    if "unique_id" in corrections:
+                        claim.unique_id = corrections["unique_id"]
+                    if "encounter_type" in corrections:
+                        claim.encounter_type = corrections["encounter_type"]
+                    self.session.add(claim)
 
-            # Map error types to requested categories
-            def _map_error_type(val: str | None) -> str:
-                v = (val or "No error").strip()
-                if v == "Technical error":
-                    return "Technical error"
-                if v == "Medical error":
-                    return "Medical error"
-                if v == "Both":
-                    return "Both"
-                return v
+                # Map error types to requested categories
+                def _map_error_type(val: str | None) -> str:
+                    v = (val or "No error").strip()
+                    if v == "Technical error":
+                        return "Technical error"
+                    if v == "Medical error":
+                        return "Medical error"
+                    if v == "Both":
+                        return "Both"
+                    return v
 
-            if result and result.get("error_type") != "No error":
-                claim.status = "Not Validated"
-                claim.error_type = _map_error_type(result["error_type"])  # map Technical->Administrative
-                claim.error_explanation = result.get("explanations", [])
-                claim.recommended_action = result.get("recommended_actions", [])
-                failed += 1
-            else:
-                claim.status = "Validated"
-                claim.error_type = "No error"
-                # If only corrections occurred, persist brief explanation and actions
-                if result and (result.get("explanations") or result.get("recommended_actions")):
+                # Determine if LLM evaluation is needed
+                llm_required = self._should_use_llm(claim, result)
+                
+                if result and result.get("error_type") != "No error":
+                    claim.status = "Not Validated"
+                    claim.error_type = _map_error_type(result["error_type"])
                     claim.error_explanation = result.get("explanations", [])
                     claim.recommended_action = result.get("recommended_actions", [])
-                validated += 1
-            self.session.add(claim)
-            
-            # Create audit record for validation completion
-            audit_complete = Audit(
-                claim_id=claim.claim_id,
-                action="validation_completed",
-                outcome="success" if claim.status == "Validated" else "failed",
-                details={
-                    "final_status": claim.status,
-                    "final_error_type": claim.error_type,
-                    "error_count": len(result.get("explanations", [])) if result else 0,
-                    "validation_method": "static_rules"
-                },
-                tenant_id=self.tenant_id,
-            )
-            self.session.add(audit_complete)
-
-            # generate refined
-            refined = Refined(
-                claim_id=claim.claim_id,
-                normalized_national_id=claim.national_id,
-                normalized_member_id=claim.member_id,
-                normalized_facility_id=claim.facility_id,
-                status=claim.status,
-                error_type=claim.error_type,
-                final_action=self._derive_final_action(claim),
-                tenant_id=self.tenant_id,
-            )
-            self.session.add(refined)
-
-            # LLM augmentation when failed or as configured
-            if claim.status == "Not Validated":
-                try:
-                    # Create audit record for LLM usage
-                    audit_llm_start = Audit(
-                        claim_id=claim.claim_id,
-                        action="llm_evaluation_started",
-                        outcome="in_progress",
-                        details={"llm_model": "gemini-2.0-flash", "reason": "claim_validation_failed"},
-                        tenant_id=self.tenant_id,
-                    )
-                    self.session.add(audit_llm_start)
-                    
-                    llm_payload = {
-                        "claim": model_to_dict(claim),
-                        "rules_text": self.rules.raw_rules_text,
-                    }
-                    llm_resp = self.llm.evaluate_claim(llm_payload)
-                    if llm_resp and isinstance(llm_resp, dict):
-                        # merge explanations and actions
-                        exps = claim.error_explanation or []
-                        acts = claim.recommended_action or []
-                        exps.extend(llm_resp.get("explanations", []) or [])
-                        acts.extend(llm_resp.get("recommended_actions", []) or [])
-                        claim.error_explanation = exps
-                        claim.recommended_action = acts
-                        # reconcile type: prefer more severe
-                        claim.error_type = reconcile_error_type(claim.error_type, llm_resp.get("error_type"))
-                        self.session.add(claim)
-                        
-                        # Create audit record for LLM completion
-                        audit_llm_complete = Audit(
-                            claim_id=claim.claim_id,
-                            action="llm_evaluation_completed",
-                            outcome="success",
-                            details={
-                                "llm_model": "gemini-2.0-flash",
-                                "additional_explanations": len(llm_resp.get("explanations", [])),
-                                "additional_actions": len(llm_resp.get("recommended_actions", [])),
-                                "final_error_type": claim.error_type
-                            },
-                            tenant_id=self.tenant_id,
-                        )
-                        self.session.add(audit_llm_complete)
-                    else:
-                        # Create audit record for LLM failure
-                        audit_llm_fail = Audit(
-                            claim_id=claim.claim_id,
-                            action="llm_evaluation_failed",
-                            outcome="error",
-                            details={"llm_model": "gemini-2.0-flash", "error": "no_response"},
-                            tenant_id=self.tenant_id,
-                        )
-                        self.session.add(audit_llm_fail)
-                except Exception as e:  # noqa: BLE001
-                    current_app.logger.exception("LLM evaluation failed; continuing with static results")
-                    # Create audit record for LLM exception
-                    audit_llm_exception = Audit(
-                        claim_id=claim.claim_id,
-                        action="llm_evaluation_exception",
-                        outcome="error",
-                        details={"llm_model": "gemini-2.0-flash", "error": str(e)},
-                        tenant_id=self.tenant_id,
-                    )
-                    self.session.add(audit_llm_exception)
+                    failed += 1
+                else:
+                    claim.status = "Validated"
+                    claim.error_type = "No error"
+                    # If only corrections occurred, persist brief explanation and actions
+                    if result and (result.get("explanations") or result.get("recommended_actions")):
+                        claim.error_explanation = result.get("explanations", [])
+                        claim.recommended_action = result.get("recommended_actions", [])
+                    validated += 1
+                
+                self.session.add(claim)
+                
+                # Step 3: LLM evaluation (if required)
+                llm_success = False
+                if llm_required:
+                    llm_success = self._perform_llm_evaluation(claim)
+                else:
+                    # Log LLM skip
+                    self._log_audit_llm_skip(claim)
+                
+                # Step 4: validation_completed (always executed)
+                self._log_audit_completion(claim, llm_required, llm_success)
+                
+                # Generate refined record
+                refined = Refined(
+                    claim_id=claim.claim_id,
+                    normalized_national_id=claim.national_id,
+                    normalized_member_id=claim.member_id,
+                    normalized_facility_id=claim.facility_id,
+                    status=claim.status,
+                    error_type=claim.error_type,
+                    final_action=self._derive_final_action(claim),
+                    tenant_id=self.tenant_id,
+                )
+                self.session.add(refined)
+                
+            except Exception as e:
+                current_app.logger.exception(f"Error processing claim {claim.claim_id}")
+                # Ensure validation_completed is logged even on error
+                self._log_audit_error(claim, str(e))
 
         self.session.commit()
         self._update_metrics()
@@ -227,9 +162,193 @@ class ValidationEngine:
             return "accept"
         if claim.error_type == "Both":
             return "reject"
-        if claim.error_type == "Medical":
+        if claim.error_type == "Medical error":
             return "escalate"
         return "reject"
+    
+    def _should_use_llm(self, claim: Master, result: dict | None) -> bool:
+        """Determine if LLM evaluation is required for this claim"""
+        # Use LLM for failed claims or when explicitly configured
+        if result and result.get("error_type") != "No error":
+            return True
+        # Add other conditions as needed (e.g., high-value claims, specific error types)
+        return False
+    
+    def _log_audit_start(self, claim: Master) -> None:
+        """Log validation_started audit record"""
+        audit_start = Audit(
+            claim_id=claim.claim_id,
+            action="validation_started",
+            outcome="in_progress",
+            details={
+                "previous_status": claim.status,
+                "previous_error_type": claim.error_type,
+                "validation_method": "static_rules"
+            },
+            tenant_id=self.tenant_id,
+        )
+        self.session.add(audit_start)
+    
+    def _log_audit_llm_skip(self, claim: Master) -> None:
+        """Log LLM evaluation skip"""
+        audit_skip = Audit(
+            claim_id=claim.claim_id,
+            action="llm_evaluation_skipped",
+            outcome="skipped",
+            details={
+                "llm_evaluation": "skipped",
+                "reason": "no_llm_required"
+            },
+            tenant_id=self.tenant_id,
+        )
+        self.session.add(audit_skip)
+    
+    def _perform_llm_evaluation(self, claim: Master) -> bool:
+        """Perform LLM evaluation and return success status"""
+        try:
+            # Create audit record for LLM usage
+            audit_llm_start = Audit(
+                claim_id=claim.claim_id,
+                action="llm_evaluation_started",
+                outcome="in_progress",
+                details={
+                    "llm_model": "gemini-2.0-flash",
+                    "reason": "claim_validation_failed",
+                    "llm_evaluation": "in_progress"
+                },
+                tenant_id=self.tenant_id,
+            )
+            self.session.add(audit_llm_start)
+            
+            llm_payload = {
+                "claim": model_to_dict(claim),
+                "rules_text": self.rules.raw_rules_text,
+            }
+            llm_resp = self.llm.evaluate_claim(llm_payload)
+            
+            if llm_resp and isinstance(llm_resp, dict):
+                # Merge LLM results with existing data
+                exps = claim.error_explanation or []
+                acts = claim.recommended_action or []
+                exps.extend(llm_resp.get("explanations", []) or [])
+                acts.extend(llm_resp.get("recommended_actions", []) or [])
+                claim.error_explanation = exps
+                claim.recommended_action = acts
+                # Reconcile error types: prefer more severe
+                claim.error_type = reconcile_error_type(claim.error_type, llm_resp.get("error_type"))
+                self.session.add(claim)
+                
+                # Create audit record for LLM completion
+                audit_llm_complete = Audit(
+                    claim_id=claim.claim_id,
+                    action="llm_evaluation_completed",
+                    outcome="success",
+                    details={
+                        "llm_model": "gemini-2.0-flash",
+                        "llm_evaluation": "completed",
+                        "additional_explanations": len(llm_resp.get("explanations", [])),
+                        "additional_actions": len(llm_resp.get("recommended_actions", [])),
+                        "final_error_type": claim.error_type
+                    },
+                    tenant_id=self.tenant_id,
+                )
+                self.session.add(audit_llm_complete)
+                return True
+            else:
+                # Create audit record for LLM failure
+                audit_llm_fail = Audit(
+                    claim_id=claim.claim_id,
+                    action="llm_evaluation_failed",
+                    outcome="error",
+                    details={
+                        "llm_model": "gemini-2.0-flash",
+                        "llm_evaluation": "failed",
+                        "error": "no_response"
+                    },
+                    tenant_id=self.tenant_id,
+                )
+                self.session.add(audit_llm_fail)
+                return False
+                
+        except Exception as e:
+            current_app.logger.exception("LLM evaluation failed; continuing with static results")
+            # Create audit record for LLM exception
+            audit_llm_exception = Audit(
+                claim_id=claim.claim_id,
+                action="llm_evaluation_exception",
+                outcome="error",
+                details={
+                    "llm_model": "gemini-2.0-flash",
+                    "llm_evaluation": "failed",
+                    "error": str(e)
+                },
+                tenant_id=self.tenant_id,
+            )
+            self.session.add(audit_llm_exception)
+            return False
+    
+    def _log_audit_completion(self, claim: Master, llm_required: bool, llm_success: bool) -> None:
+        """Log validation_completed audit record"""
+        # Determine validation method
+        if llm_required and llm_success:
+            validation_method = "static+llm"
+        elif llm_required and not llm_success:
+            validation_method = "static_rules_fallback"
+        else:
+            validation_method = "static_rules_only"
+        
+        # Determine LLM evaluation status
+        if llm_required:
+            llm_evaluation = "completed" if llm_success else "failed"
+        else:
+            llm_evaluation = "skipped"
+        
+        audit_complete = Audit(
+            claim_id=claim.claim_id,
+            action="validation_completed",
+            outcome="success" if claim.status == "Validated" else "failed",
+            details={
+                "final_status": claim.status,
+                "final_error_type": claim.error_type,
+                "error_count": len(claim.error_explanation or []),
+                "validation_method": validation_method,
+                "llm_evaluation": llm_evaluation
+            },
+            tenant_id=self.tenant_id,
+        )
+        self.session.add(audit_complete)
+    
+    def _log_audit_error(self, claim: Master, error_msg: str) -> None:
+        """Log error audit record and ensure validation_completed exists"""
+        # Log the error
+        audit_error = Audit(
+            claim_id=claim.claim_id,
+            action="validation_error",
+            outcome="error",
+            details={
+                "error": error_msg,
+                "validation_method": "static_rules_only",
+                "llm_evaluation": "failed"
+            },
+            tenant_id=self.tenant_id,
+        )
+        self.session.add(audit_error)
+        
+        # Ensure validation_completed exists
+        audit_complete = Audit(
+            claim_id=claim.claim_id,
+            action="validation_completed",
+            outcome="error",
+            details={
+                "final_status": "Error",
+                "final_error_type": "No error",
+                "error_count": 0,
+                "validation_method": "static_rules_only",
+                "llm_evaluation": "failed"
+            },
+            tenant_id=self.tenant_id,
+        )
+        self.session.add(audit_complete)
 
     def comprehensive_adjudication(self, df) -> dict[str, Any]:
         """Comprehensive medical claims adjudication with detailed validation and corrections"""
