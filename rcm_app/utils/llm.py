@@ -2,10 +2,22 @@ import os
 import json
 from typing import Any, Optional
 
+# Prefer the new official google-genai client: `from google import genai`
+GENAI_MODE = None  # 'client' | 'generativeai' | None
+genai_client_lib = None
+genai_legacy_lib = None
+
 try:
-    import google.generativeai as genai
+    # New client style: from google import genai
+    from google import genai as genai_client_lib  # type: ignore
+    GENAI_MODE = "client"
 except Exception:  # noqa: BLE001
-    genai = None
+    try:
+        # Legacy library: google.generativeai
+        import google.generativeai as genai_legacy_lib  # type: ignore
+        GENAI_MODE = "generativeai"
+    except Exception:  # noqa: BLE001
+        GENAI_MODE = None
 
 
 PROMPT_TEMPLATE = (
@@ -40,23 +52,40 @@ Output JSON format:
 
 class GeminiClient:
     def __init__(self) -> None:
-        self.api_key = os.getenv("GOOGLE_API_KEY")
-        self.model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-        self.enabled = bool(self.api_key)
-        if self.enabled and genai:
-            genai.configure(api_key=self.api_key)
+        # Prefer environment key; fallback to provided hardcoded key if missing
+        self.api_key = os.getenv("GOOGLE_API_KEY") or "AIzaSyAS9-BWh1rRwBIE9FSOZyTKn5QRIhKOY7M"
+        # Default to the latest flash per user's sample; allow override via env
+        self.model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        self.enabled = bool(self.api_key) and GENAI_MODE is not None
+
+        self._client = None
+        if not self.enabled:
+            return
+
+        try:
+            if GENAI_MODE == "client":
+                # New official client
+                self._client = genai_client_lib.Client(api_key=self.api_key)
+            elif GENAI_MODE == "generativeai":
+                # Legacy client configuration
+                genai_legacy_lib.configure(api_key=self.api_key)
+            else:
+                pass
+        except Exception:  # noqa: BLE001
+            self._client = None
+            self.enabled = False
 
     def evaluate_claim(self, payload: dict[str, Any]) -> dict[str, Any] | None:
-        if not self.enabled or not genai:
+        if not self.enabled:
             return None
         try:
             prompt = PROMPT_TEMPLATE.format(
                 claim=json.dumps(payload.get("claim"), ensure_ascii=False),
                 rules=payload.get("rules_text", ""),
             )
-            model = genai.GenerativeModel(self.model_name)
-            resp = model.generate_content(prompt)
-            text = resp.text or "{}"
+            text = self._generate_text(prompt)
+            if not text:
+                return None
             data = json.loads(text)
             if not isinstance(data, dict):
                 return None
@@ -66,21 +95,31 @@ class GeminiClient:
         except Exception:  # noqa: BLE001
             return None
     
-    def _generate_content(self, prompt: str) -> Optional[str]:
-        """Generate content using Gemini with enhanced error handling"""
-        if not self.enabled or not genai:
+    def _generate_text(self, prompt: str) -> Optional[str]:
+        """Generate text using the preferred Google GenAI client."""
+        if not self.enabled:
             return None
         try:
-            model = genai.GenerativeModel(self.model_name)
-            resp = model.generate_content(prompt)
-            return resp.text
+            if GENAI_MODE == "client" and self._client is not None:
+                # New client usage
+                resp = self._client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                )
+                return getattr(resp, "text", None)
+            elif GENAI_MODE == "generativeai":
+                # Legacy client usage
+                model = genai_legacy_lib.GenerativeModel(self.model_name)
+                resp = model.generate_content(prompt)
+                return getattr(resp, "text", None)
+            return None
         except Exception as e:
             print(f"Gemini API error: {e}")
             return None
     
     def enhanced_analysis(self, claim_data: dict[str, Any], rules_text: str, query: str) -> dict[str, Any] | None:
         """Enhanced analysis with specific query support"""
-        if not self.enabled or not genai:
+        if not self.enabled:
             return None
         try:
             prompt = ENHANCED_PROMPT_TEMPLATE.format(
@@ -89,7 +128,7 @@ class GeminiClient:
                 query=query
             )
             
-            response = self._generate_content(prompt)
+            response = self._generate_text(prompt)
             if not response:
                 return None
             
