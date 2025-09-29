@@ -25,12 +25,20 @@ def create_app(config: AppConfig | None = None) -> Flask:
     db.init_app(app)
     jwt.init_app(app)
     
-    # Enable CORS for all routes
-    CORS(app, origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"], 
-         allow_headers=["Content-Type", "Authorization"], 
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         supports_credentials=True,
-         max_age=3600)
+    # Enable CORS for all routes (env-driven)
+    cors_origins_env = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://localhost:5174,http://localhost:3000,https://rcm-front-end.onrender.com",
+    )
+    cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    CORS(
+        app,
+        origins=cors_origins,
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        supports_credentials=True,
+        max_age=3600,
+    )
 
     register_blueprints(app)
 
