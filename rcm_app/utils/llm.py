@@ -53,7 +53,7 @@ Output JSON format:
 class GeminiClient:
     def __init__(self) -> None:
         # Prefer environment key; fallback to provided hardcoded key if missing
-        self.api_key = os.getenv("GOOGLE_API_KEY") or "AIzaSyAS9-BWh1rRwBIE9FSOZyTKn5QRIhKOY7M"
+        self.api_key = os.getenv("GOOGLE_API_KEY") 
         # Default to the latest flash per user's sample; allow override via env
         self.model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         self.enabled = bool(self.api_key) and GENAI_MODE is not None
